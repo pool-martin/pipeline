@@ -1,0 +1,43 @@
+version: "2.3"
+
+services:
+  gpu:
+    runtime: runc
+    userns_mode: "host"
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    volumes:
+      - type: bind
+        source: /home/jp/Exp
+        target: /Exp
+      - type: bind
+        source: /home/jp/DL
+        target: /DL
+        read_only: true
+      - type: bind
+        source: .
+        target: /workspace
+  cpu:
+    userns_mode: "host"
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    volumes:
+      - type: bind
+        source: /home/jp/repos/Exp
+        target: /Exp
+      - type: bind
+        source: /home/jp/repos/DL
+        target: /DL
+        read_only: true
+      - type: bind
+        source: .
+        target: /workspace

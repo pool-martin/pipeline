@@ -1,0 +1,15 @@
+ FROM tensorflow/tensorflow:1.10.0-py3
+
+ RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        wget \
+        libsm6 libxext6 libxrender-dev # for python opencv
+
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip
+RUN pip install pandas scikit-learn opencv-python matplotlib numpy dm-sonnet joblib keras
+
+WORKDIR /workspace
