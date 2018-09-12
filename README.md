@@ -6,12 +6,20 @@ Step 0 - Create fold split (outside of container since DL is readonly)
     python create_split_2kporn.py --split-number s1
 
 Step 1 - Create container
-    docker-compose up -d --scale cpu=0 --scale gpu=1
+    if it's installed:
+        docker-compose up -d --scale gpu=1 gpu
+    if it's not installed:
+        sudo bash -c "curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose"
+        chmod +x ~/docker-compose
+        ~/docker-compose up -d --scale gpu=1 gpu
+    if not using docker compose:
+        docker image build --file ./Dockerfile.gpu --tag jp-pipeline-gpu:v1 .
+        nvidia-docker run --name jp_gpu_1 -ti -v /home/jp/Exp/:/Exp/ -v /home/jp/DL/:/DL/ -v .:/workspace/ --userns=host jp-pipeline-gpu:v1 /bin/bash
 
 Step 2 - Create sets (network_training, network_validation, svm_training, svm_validation and test)
-    sample-rate unit = fps
-    sample-length unit = number frames
-    sample-width unit = seconds
+    # sample-rate unit = fps
+    # sample-length unit = number frames
+    # sample-width unit = seconds
     python create_sets.py --split-number s1 --sample-rate 1 --snippet-length 32 --snippet-width 5
 
 Passo 5 - Treinar

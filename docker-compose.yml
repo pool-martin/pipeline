@@ -2,11 +2,12 @@ version: "2.3"
 
 services:
   gpu:
-    runtime: runc
+    runtime: nvidia
     userns_mode: "host"
     stdin_open: true
     tty: true
     working_dir: /workspace
+    image: jp-pipeline-gpu:v1
     build:
       context: .
       dockerfile: Dockerfile.gpu
@@ -27,6 +28,7 @@ services:
     stdin_open: true
     tty: true
     working_dir: /workspace
+    image: jp-pipeline-cpu:v1
     build:
       context: .
       dockerfile: Dockerfile.cpu
