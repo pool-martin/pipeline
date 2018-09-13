@@ -4,6 +4,7 @@ services:
   gpu:
     runtime: nvidia
     userns_mode: "host"
+    entrypoint: /bin/bash
     stdin_open: true
     tty: true
     working_dir: /workspace
