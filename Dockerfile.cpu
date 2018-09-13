@@ -6,7 +6,7 @@ ARG OUTSIDE_GROUP
 ARG OUTSIDE_GID
 
 RUN groupadd -g $OUTSIDE_GID $OUTSIDE_GROUP && \
-    useradd -r -u $OUTSIDE_UID -g jp -s /bin/bash -G sudo -p $OUTSIDE_GROUP $OUTSIDE_USER
+    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo -p $OUTSIDE_GROUP $OUTSIDE_USER
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \

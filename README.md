@@ -7,7 +7,7 @@ Step 0 - Create fold split (outside of container since DL is readonly)
 
 Step 1 - Create container
     Export user setting:
-        export OUTSIDE_UID=$(id -g)
+        export OUTSIDE_UID=$(id -u)
         export OUTSIDE_GROUP=$(id -ng)
         export OUTSIDE_GID=$(id -g)
 
