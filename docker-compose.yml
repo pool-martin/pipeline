@@ -11,6 +11,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.gpu
+      args:
+        - OUTSIDE_USER=${USER}
+        - OUTSIDE_UID=${OUTSIDE_UID}
+        - OUTSIDE_GROUP=${OUTSIDE_GROUP}
+        - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
         source: /home/jp/Exp
@@ -22,6 +27,9 @@ services:
       - type: bind
         source: .
         target: /workspace
+    user: ${USER}
+    group_add:
+      - ${OUTSIDE_GROUP}
   cpu:
     userns_mode: "host"
     entrypoint: /bin/bash
@@ -32,6 +40,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.cpu
+      args:
+        - OUTSIDE_USER=${USER}
+        - OUTSIDE_UID=${OUTSIDE_UID}
+        - OUTSIDE_GROUP=${OUTSIDE_GROUP}
+        - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
         source: /home/jp/repos/Exp
@@ -43,3 +56,7 @@ services:
       - type: bind
         source: .
         target: /workspace
+    user: ${USER}
+    group_add:
+      - ${OUTSIDE_GROUP}
+

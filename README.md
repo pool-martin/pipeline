@@ -6,6 +6,11 @@ Step 0 - Create fold split (outside of container since DL is readonly)
     python create_split_2kporn.py --split-number s1
 
 Step 1 - Create container
+    Export user setting:
+        export OUTSIDE_UID=$(id -g)
+        export OUTSIDE_GROUP=$(id -ng)
+        export OUTSIDE_GID=$(id -g)
+
     if it's installed:
         docker-compose up -d --scale gpu=1 gpu
     if it's not installed:
