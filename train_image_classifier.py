@@ -135,7 +135,7 @@ def keras_model():
                 optimizer=optimizer,
                 metrics=['accuracy'])
     return model
-git@github.com:pool-martin/pipeline.git
+
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
