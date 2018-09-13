@@ -28,10 +28,13 @@ Step 2 - Create sets (network_training, network_validation, svm_training, svm_va
     python create_sets.py --split-number s1 --sample-rate 1 --snippet-length 32 --snippet-width 5
 
 Passo 5 - Treinar
+    export CUDA_VISIBLE_DEVICES=0
+    python train_image_classifier.py --model_name VGG16
+
+
 			Definir batch, epochSize
 			root@b29e6baffa24:/data/torch/ltc# find /data/torch/ltc/datasets/2kporn/rgb/jpg/ -type f | wc -l => 13771673
 			epochSize = (13771673/16)/100 => 8608 | está com 4400
-			export CUDA_VISIBLE_DEVICES=0
 			th  main.lua -nFrames 16 -stream rgb -expName 2kporn_rgb_16f_d5_center_crop_new_split -dataset 2kporn  -dropout 0.5 -LRfile LR/UCF101/flow_d5.lua -epochSize 4400 -batchSize 100 -cropbeforeresize >> log/process/2kporn_rgb_16f_d5_center_crop_new_split 2>&1
 			
 			Experimentos time_window fixo:
