@@ -9,13 +9,15 @@ import numpy as np
 import nets
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
-from utils.sets_helper import assembly_sets_path, assembly_snippets_path
+import utils.sets_helper as helper
 from utils.opencv import get_video_frames
 
 tf.app.flags.DEFINE_string(
     'model_name', 'i3d', 'The name of the cnn to train.')
 tf.app.flags.DEFINE_string(
-    'model_dir', '/Exp/2kporn/i3d/checkpoint', 'path to save checkpoints.')
+    'model_dir', '/Exp/2kporn/checkpoints', 'path to save checkpoints.')
+tf.app.flags.DEFINE_string(
+    'experiment_tag', 'initial_training', 'tag used in model dir places where we want to diferentiate subsequent executions.')
 tf.app.flags.DEFINE_string(
     'dataset_dir', '/DL/2kporn/', 'The sets to be used.')
 tf.app.flags.DEFINE_string(
@@ -74,7 +76,7 @@ def input_fn(videos_in_split, labels,
         frame_number = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
         video_path = tf.string_join( inputs=[os.path.join(FLAGS.dataset_dir, 'videos'), '/' , video_name, '.mp4'])
         if ('3D' in FLAGS.split_type):
-            with open(os.path.join(assembly_sets_path(FLAGS), video_name,  '{}.txt'.format(frame_identificator)), 'r') as f:
+            with open(os.path.join(helper.assembly_sets_path(FLAGS), video_name,  '{}.txt'.format(frame_identificator)), 'r') as f:
                 frames = f.read().split('\n')
             snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.double], stateful=False, name='retrieve_snippet')
         else:
@@ -143,17 +145,18 @@ def keras_model():
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-    session_config = tf.ConfigProto()
-    session_config.gpu_options.allow_growth = True
-    session_config.gpu_options.per_process_gpu_memory_fraction = 0.9
+    sess_config = tf.ConfigProto()
+    sess_config.gpu_options.allow_growth = True
+    sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
 
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
-                                    session_config=session_config,
-                                    model_dir=FLAGS.model_dir,
+                                    session_config=sess_config,
+                                    model_dir=helper.assemply_model_dir(FLAGS),
                                     tf_random_seed=1,
                                     save_checkpoints_secs=3600,
+                                    keep_checkpoint_every_n_hours=1,
                                     keep_checkpoint_max=10,
-                                    save_summary_steps=600)
+                                    save_summary_steps=100)
 
 
     estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
@@ -173,9 +176,9 @@ def get_splits():
     network_training_set = []
     network_validation_set = []
 
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set.txt'), 'r') as f:
+    with open(os.path.join(helper.assembly_sets_path(FLAGS), 'network_training_set.txt'), 'r') as f:
         network_training_set = f.readlines()
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set.txt'), 'r') as f:
+    with open(os.path.join(helper.assembly_sets_path(FLAGS), 'network_validation_set.txt'), 'r') as f:
         network_validation_set = f.readlines()
 
     return network_training_set, network_validation_set
