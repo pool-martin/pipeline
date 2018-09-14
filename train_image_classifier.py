@@ -147,7 +147,7 @@ def create_estimator():
 
     sess_config = tf.ConfigProto()
     sess_config.gpu_options.allow_growth = True
-    sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
+    #sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
 
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     session_config=sess_config,
@@ -224,11 +224,11 @@ def main():
     #                                         steps=50,
     #                                         hooks=[time_hist])
 
-#    total_time =  sum(time_hist.times)
-#    print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')
+   total_time =  sum(time_hist.times)
+   print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')
 
-#    avg_time_per_batch = np.mean(time_hist.times)
-#    print(FLAGS.batch_size*FLAGS.num_gpus/avg_time_per_batch, 'images/second with', FLAGS.num_gpus, 'GPUs')
+   avg_time_per_batch = np.mean(time_hist.times)
+   print(FLAGS.batch_size*FLAGS.num_gpus/avg_time_per_batch, 'images/second with', FLAGS.num_gpus, 'GPUs')
 
 
 
