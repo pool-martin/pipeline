@@ -151,7 +151,7 @@ def create_estimator():
 
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     session_config=sess_config,
-                                    model_dir=helper.assemply_model_dir(FLAGS),
+                                    model_dir=helper.assembly_model_dir(FLAGS),
                                     tf_random_seed=1,
                                     save_checkpoints_secs=3600,
                                     keep_checkpoint_every_n_hours=1,
@@ -166,7 +166,7 @@ def create_estimator():
     return estimator
 
 def check_and_create_directories():
-    directories = [FLAGS.model_dir]
+    directories = [helper.assembly_model_dir(FLAGS)]
 
     for directory in directories:
         if not os.path.exists(directory):
