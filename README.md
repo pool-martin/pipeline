@@ -6,7 +6,7 @@ Step 0 - Create fold split (outside of container since DL is readonly)
     python create_split_2kporn.py --split-number s1
 
 Step 1 - Create container
-    Export user setting:
+    save this to ~/.bashrc:
         export OUTSIDE_UID=$(id -u)
         export OUTSIDE_GROUP=$(id -ng)
         export OUTSIDE_GID=$(id -g)

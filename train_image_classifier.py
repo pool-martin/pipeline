@@ -145,7 +145,7 @@ def keras_model():
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-    sess_config = tf.ConfigProto(log_device_placement = True, allow_soft_placement = True)
+    sess_config = tf.ConfigProto()
     sess_config.gpu_options.allow_growth = True
     #sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
 
