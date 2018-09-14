@@ -8,7 +8,7 @@ services:
     stdin_open: true
     tty: true
     working_dir: /workspace
-    image: jp-pipeline-gpu:v1
+    image: ${USER}-pipeline-gpu:v1
     build:
       context: .
       dockerfile: Dockerfile.gpu
@@ -19,15 +19,18 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /home/jp/Exp
+        source: /home/${USER}/Exp
         target: /Exp
       - type: bind
-        source: /home/jp/DL
+        source: /home/${USER}/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
+      - type: bind
+        source: /home/${USER}/container_home
+        target: /home/${USER}
     user: ${USER}
     group_add:
       - ${OUTSIDE_GROUP}
@@ -37,7 +40,7 @@ services:
     stdin_open: true
     tty: true
     working_dir: /workspace
-    image: jp-pipeline-cpu:v1
+    image: ${USER}-pipeline-cpu:v1
     build:
       context: .
       dockerfile: Dockerfile.cpu
@@ -48,15 +51,18 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /home/jp/repos/Exp
+        source: /home/${USER}/repos/Exp
         target: /Exp
       - type: bind
-        source: /home/jp/repos/DL
+        source: /home/${USER}/repos/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
+      - type: bind
+        source: /home/${USER}/repos/container_home
+        target: /home/${USER}
     user: ${USER}
     group_add:
       - ${OUTSIDE_GROUP}
