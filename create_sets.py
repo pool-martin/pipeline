@@ -135,9 +135,9 @@ def is_snippet_length_too_low(init_bound, end_bound, fps, args):
     desired_length = args.snippet_width * fps
     # snippets fewer than 0.5 * desired length will be discarded
     if snippet_length >= 0.5 * desired_length:
-        return True
-    else:
         return False
+    else:
+        return True
 
 def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args):
 

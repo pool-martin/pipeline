@@ -2,7 +2,7 @@ import os
 import time
 
 import tensorflow as tf
-tf.enable_eager_execution()
+#tf.enable_eager_execution()
 
 import numpy as np
 
@@ -31,7 +31,7 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_integer(
     'num_gpus', 2, 'The number of gpus that should be used')
 tf.app.flags.DEFINE_integer(
-    'sample_rate', 1, 'sample rate of the dataset in fps')
+    'sample_rate', 5, 'sample rate of the dataset in fps')
 tf.app.flags.DEFINE_integer(
     'snippet_size', 32, 'The number of frames in the snippet')
 tf.app.flags.DEFINE_integer(
@@ -73,11 +73,12 @@ def input_fn(videos_in_split, labels,
         if ('3D' in FLAGS.split_type):
             with open(os.path.join(assembly_sets_path(FLAGS), video_name,  '{}.txt'.format(frame_identificator)), 'r') as f:
                 frames = f.read().split('\n')
-            snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.float32], stateful=False, name='flow_transform')
+            snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.double], stateful=False, name='retrieve_snippet')
         else:
             frames = [frame_number]
-            snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.float32], stateful=False, name='flow_transform')
+            snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.double], stateful=False, name='retrieve_snippet')
         
+        snippet = tf.cast(snippet,tf.float32)
         snippet = tf.stack(snippet)
         snippet.set_shape([len(frames)] + list(image_size) + [3])
         snippet = tf.squeeze(snippet)
@@ -95,14 +96,11 @@ def input_fn(videos_in_split, labels,
         dataset = dataset.repeat(num_epochs)
 
     dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(map_func=_map_func,
-                                      batch_size=batch_size,
-                                      num_parallel_calls=os.cpu_count()))
+       tf.contrib.data.map_and_batch(map_func=_map_func,
+                                     batch_size=batch_size,
+                                     num_parallel_calls=os.cpu_count()))
     dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
-    dataset_iterator = dataset.make_initializable_iterator()
-    tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, dataset_iterator.initializer)
-    return dataset_iterator.get_next()
-#    return dataset
+    return dataset
 
 
 def keras_model():
@@ -113,40 +111,41 @@ def keras_model():
         print('TODO')
     elif FLAGS.model_name == 'mobilenet-3d':
         print('TODO')
+    elif FLAGS.model_name == 'inception-v3':
+        keras_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
     elif FLAGS.model_name == 'inception-v4':
         keras_model = nets.keras_inception_v4.create_model(num_classes=2, include_top=False)
     elif FLAGS.model_name == 'VGG16':
-        keras_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False)
+        base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
+        top_model = tf.keras.models.Sequential()
+        top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
+        top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
+        keras_model = tf.keras.Model(inputs=base_model.input, outputs=top_model(base_model.output))
     else:
         raise ValueError('Unsupported deep network model')
-
-    output = keras_model.output
-    output = tf.keras.layers.Flatten()(output)
-    predictions = tf.keras.layers.Dense(len(labels), activation=tf.nn.softmax)(output)
-
-    model = tf.keras.Model(inputs=keras_model.input, outputs=predictions)
 
     for layer in keras_model.layers[:-4]:
         layer.trainable = False
 
-    optimizer = tf.train.AdamOptimizer()
+    keras_model.compile(optimizer=tf.keras.optimizers.SGD(lr=0.0001, momentum=0.9),
+                          loss='categorical_crossentropy',
+                          metrics=['accuracy'])
 
-    model.compile(loss='categorical_crossentropy', 
-                optimizer=optimizer,
-                metrics=['accuracy'])
-    return model
+    return keras_model
 
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     model_dir=FLAGS.model_dir,
                                     tf_random_seed=1,
-                                    save_checkpoints_secs=600,
+                                    save_checkpoints_secs=3600,
                                     keep_checkpoint_max=10,
                                     save_summary_steps=600)
 
 
-    estimator = tf.keras.estimator.model_to_estimator(keras_model(), config=config)
+    estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
+    
+
 
     return estimator
 
@@ -174,44 +173,43 @@ def main():
 
     estimator = create_estimator()
     time_hist = TimeHistory()
-    tf.logging.set_verbosity(tf.logging.INFO)
     tf.train.create_global_step()
 
-#    print('#######################', int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size))
-    # train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
-    #                                         labels,
-    #                                         shuffle=True,
-    #                                         batch_size=FLAGS.batch_size,
-    #                                         buffer_size=2048,
-    #                                         num_epochs=FLAGS.epochs,
-    #                                         prefetch_buffer_size=4),
-    #                                         max_steps= int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size),
-    #                                         hooks=[time_hist])
-
-    # eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
-    #                                         labels, 
-    #                                         shuffle=False,
-    #                                         batch_size=FLAGS.batch_size,
-    #                                         buffer_size=2048,
-    #                                         num_epochs=1),
-    #                                         steps=None,
-    #                                         throttle_secs=FLAGS.eval_interval_secs)
-    # tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-    estimator.train(lambda:input_fn(network_training_set,
+    print('#######################', int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size))
+    train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
                                             labels,
                                             shuffle=True,
                                             batch_size=FLAGS.batch_size,
                                             buffer_size=2048,
                                             num_epochs=FLAGS.epochs,
                                             prefetch_buffer_size=4),
-                                            steps=100,
+                                            max_steps= int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size),
                                             hooks=[time_hist])
+
+    eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
+                                            labels, 
+                                            shuffle=False,
+                                            batch_size=FLAGS.batch_size,
+                                            buffer_size=2048,
+                                            num_epochs=1),
+                                            steps=None,
+                                            throttle_secs=FLAGS.eval_interval_secs)
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    # estimator.train(lambda:input_fn(network_training_set,
+    #                                         labels,
+    #                                         shuffle=True,
+    #                                         batch_size=FLAGS.batch_size,
+    #                                         buffer_size=2048,
+    #                                         num_epochs=FLAGS.epochs,
+    #                                         prefetch_buffer_size=4),
+    #                                         steps=50,
+    #                                         hooks=[time_hist])
 
     total_time =  sum(time_hist.times)
     print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')
 
-#    avg_time_per_batch = np.mean(time_hist.times)
-#    print(FLAGS.batch_size*FLAGS.num_gpus/avg_time_per_batch, 'images/second with', FLAGS.num_gpus, 'GPUs')
+    avg_time_per_batch = np.mean(time_hist.times)
+    print(FLAGS.batch_size*FLAGS.num_gpus/avg_time_per_batch, 'images/second with', FLAGS.num_gpus, 'GPUs')
 
 
 
