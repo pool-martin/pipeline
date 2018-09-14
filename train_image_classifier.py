@@ -109,7 +109,7 @@ def keras_model():
         keras_model = nets.keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
     elif FLAGS.model_name == 'mobilenet-3d':
         print('TODO')
-    elif FLAGS.model_name == 'mobilenet-3d':
+    elif FLAGS.model_name == 'mobilenet':
         base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
         top_model = tf.keras.models.Sequential()
         top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
