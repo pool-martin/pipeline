@@ -37,7 +37,7 @@ tf.app.flags.DEFINE_integer(
 tf.app.flags.DEFINE_integer(
     'snippet_width', 5, 'The length in seconds the snippet should represent')
 tf.app.flags.DEFINE_integer(
-    'batch_size', 4, 'The number of snippets in the batch')
+    'batch_size', 8, 'The number of snippets in the batch')
 tf.app.flags.DEFINE_integer(
     'epochs', 2, 'The number of epochs to run the training')
 tf.app.flags.DEFINE_integer(
@@ -48,6 +48,9 @@ tf.app.flags.DEFINE_integer(
     'image_channels', 3, 'channels of the entry images.')
 tf.app.flags.DEFINE_boolean(
     'distributed_run', False, 'split and sets dirs will be assembled or received.')
+tf.app.flags.DEFINE_string(
+    'gpu_to_use', '', 'gpus to use')
+
 
 labels = ['Porn', 'NonPorn']
 labels = ['1', '0']
@@ -139,12 +142,19 @@ def keras_model():
 
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
+
+    session_config = tf.ConfigProto()
+    session_config.gpu_options.allow_growth = True
+    session_config.gpu_options.per_process_gpu_memory_fraction = 0.9
+
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
+                                    session_config=session_config,
                                     model_dir=FLAGS.model_dir,
                                     tf_random_seed=1,
                                     save_checkpoints_secs=3600,
                                     keep_checkpoint_max=10,
                                     save_summary_steps=600)
+    config.gpu_options.allow_growth=True
 
 
     estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
@@ -172,6 +182,9 @@ def get_splits():
     return network_training_set, network_validation_set
 
 def main():
+    if FLAGS.gpu_to_use:
+        os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu_to_use
+
     check_and_create_directories()
     network_training_set, network_validation_set = get_splits()
 
