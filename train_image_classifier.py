@@ -115,7 +115,7 @@ def keras_model():
     elif FLAGS.model_name == 'mobilenet-3d':
         print('TODO')
     elif FLAGS.model_name == 'mobilenet':
-        base_model = tf.python.keras.applications.MobileNet.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
+        base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
         top_model = tf.keras.models.Sequential()
         top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
         top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
@@ -125,7 +125,7 @@ def keras_model():
     elif FLAGS.model_name == 'inception-v4':
         keras_model = nets.keras_inception_v4.create_model(num_classes=2, include_top=False)
     elif FLAGS.model_name == 'VGG16':
-        base_model = tf.python.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
+        base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
         top_model = tf.keras.models.Sequential()
         top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
         top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
