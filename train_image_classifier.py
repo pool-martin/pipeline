@@ -110,7 +110,11 @@ def keras_model():
     elif FLAGS.model_name == 'mobilenet-3d':
         print('TODO')
     elif FLAGS.model_name == 'mobilenet-3d':
-        print('TODO')
+        base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
+        top_model = tf.keras.models.Sequential()
+        top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
+        top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
+        keras_model = tf.keras.Model(inputs=base_model.input, outputs=top_model(base_model.output))
     elif FLAGS.model_name == 'inception-v3':
         keras_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
     elif FLAGS.model_name == 'inception-v4':

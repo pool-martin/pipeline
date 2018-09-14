@@ -25,7 +25,7 @@ Step 2 - Create sets (network_training, network_validation, svm_training, svm_va
     # sample-rate unit = fps
     # sample-length unit = number frames
     # sample-width unit = seconds
-    python create_sets.py --split-number s1 --sample-rate 1 --snippet-length 32 --snippet-width 5
+    python create_sets.py --split-number s1 --sample-rate 5 --snippet-length 32 --snippet-width 5
 
 Passo 5 - Treinar
     export CUDA_VISIBLE_DEVICES=0
