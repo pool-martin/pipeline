@@ -28,7 +28,7 @@ Step 2 - Create sets (network_training, network_validation, svm_training, svm_va
     python create_sets.py --split-number s1 --sample-rate 5 --snippet-length 32 --snippet-width 5
 
 Passo 5 - Treinar
-    export CUDA_VISIBLE_DEVICES=0
+    export CUDA_VISIBLE_DEVICES=1
     python train_image_classifier.py --model_name VGG16
 
 
