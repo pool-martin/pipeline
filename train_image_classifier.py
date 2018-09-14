@@ -154,7 +154,6 @@ def create_estimator():
                                     save_checkpoints_secs=3600,
                                     keep_checkpoint_max=10,
                                     save_summary_steps=600)
-    config.gpu_options.allow_growth=True
 
 
     estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
