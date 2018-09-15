@@ -138,17 +138,22 @@ def model_fn(features, labels, mode, params=None, config=None):
           mode, predictions=predictions, export_outputs=export_outputs)
 
     if mode == ModeKeys.TRAIN:
-        learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
-        optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
+        #learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
+        #optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
         
 
-        train_op = slim.optimize_loss(loss=loss,
-                                        global_step=global_step,
-                                        learning_rate=learning_rate,
-                                        clip_gradients=10.0,
-                                        optimizer=optimizer,
-                                        summaries=slim.OPTIMIZER_SUMMARIES
-                                        )
+        #train_op = slim.optimize_loss(loss=loss,
+        #                                global_step=global_step,
+        #                                learning_rate=0.001,
+        #                                clip_gradients=10.0,
+        #                                optimizer=optimizer,
+        #                                summaries=slim.OPTIMIZER_SUMMARIES
+        #                                )
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        train_op = optimizer.minimize(
+            loss=loss,
+            global_step=tf.train.get_global_step())
+
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
 
     if mode == ModeKeys.EVAL:
