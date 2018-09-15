@@ -106,7 +106,7 @@ def select_snippet_frames(init_bound, end_bound, fps, args):
     step = int(math.floor(window / args.snippet_length))
     step = step if step > 0 else 1
     while len(snippet) < args.snippet_length:
-        for frame in range(init_bound, end_bound+1, step):
+        for frame in range(init_bound, end_bound, step):
             snippet.append(frame)
         #lets change a bit the frames if needed to loop again by summing 1 on init_bound if possible
         init_bound = init_bound + 1 if init_bound < end_bound else init_bound
