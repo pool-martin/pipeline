@@ -261,14 +261,14 @@ def model_fn(features, labels, mode, params=None, config=None):
         i3d_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
         predictions, end_points = i3d_model(features, is_training=False, dropout_keep_prob=1.0)
         loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=end_points['Logits'])
-        predicted_classes = tf.argmax(end_points['Logits'], 1)
+        # predicted_classes = tf.argmax(end_points['Logits'], 1)
 
 
     if mode == ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
         predictions, end_points = i3d_model(features, is_training=True, dropout_keep_prob=1.0)
         loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=end_points['Logits'])
-        predicted_classes = tf.argmax(end_points['Logits'], 1)
+        # predicted_classes = tf.argmax(end_points['Logits'], 1)
         learning_rate = helpers.configure_learning_rate(FLAGS, 10000, global_step)
         optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
 
@@ -280,11 +280,11 @@ def model_fn(features, labels, mode, params=None, config=None):
                                         summaries=slim.OPTIMIZER_SUMMARIES
                                         )
     elif mode == ModeKeys.PREDICT:
-        predictions = {
-        'class_ids': predicted_classes[:, tf.newaxis],
-        'probabilities': tf.nn.softmax(end_points['Logits']),
-        'logits': end_points['Logits'],
-        }
+        # predictions = {
+        # 'class_ids': predicted_classes[:, tf.newaxis],
+        # 'probabilities': tf.nn.softmax(end_points['Logits']),
+        # 'logits': end_points['Logits'],
+        # }
 #    elif mode == ModeKeys.EVAL:
 
     # accuracy = tf.metrics.accuracy(labels=labels,
