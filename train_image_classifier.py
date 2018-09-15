@@ -158,8 +158,8 @@ def model_fn(features, labels, mode, params=None, config=None):
 
     if mode == ModeKeys.EVAL:
         eval_metric_ops = {
-            'accuracy': tf.metrics.accuracy(labels, predicted_indices),
-            'auroc': tf.metrics.auc(tf.one_hot(labels, len(dataset_labels)), probabilities)
+            'accuracy': tf.metrics.accuracy(labels, predicted_indices)
+            # 'auroc': tf.metrics.auc(tf.one_hot(labels, len(dataset_labels)), logits)
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
