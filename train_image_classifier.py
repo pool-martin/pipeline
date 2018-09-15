@@ -19,8 +19,8 @@ from utils.opencv import get_video_frames
 FLAGS = helpers.define_flags()
 
 # Global vars
-dataset_labels = ['Porn', 'NonPorn']
-dataset_labels = ['1', '0'] #We are extracting labels from filenames and there is is as '1' and '0'
+dataset_labels = ['NonPorn', 'Porn']
+dataset_labels = ['0', '1'] #We are extracting labels from filenames and there is is as '1' and '0'
 training_set_length = 0
 
 def input_fn(videos_in_split,
@@ -50,8 +50,6 @@ def input_fn(videos_in_split,
         snippet = tf.squeeze(snippet)
 
         print('snippet shape: ', snippet.shape)
-        
-#        return (snippet, tf.one_hot(table.lookup(label), len(dataset_labels)))
         return (snippet, table.lookup(label))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
@@ -128,7 +126,7 @@ def model_fn(features, labels, mode, params=None, config=None):
     if mode == ModeKeys.PREDICT:
       # Convert predicted_indices back into strings
       predictions = {
-          'classes': tf.gather(label_values, predicted_indices),
+          'classes': tf.gather(tf.constant(dataset_labels), predicted_indices),
           'scores': tf.reduce_max(probabilities, axis=1),
           'probabilities': probabilities,
           'logits': logits,
