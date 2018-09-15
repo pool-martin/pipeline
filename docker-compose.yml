@@ -34,6 +34,8 @@ services:
     user: ${USER}
     group_add:
       - ${OUTSIDE_GROUP}
+    environment:
+      - TFHUB_CACHE_DIR=/home/${USER}/tfhub_modules
   cpu:
     userns_mode: "host"
     entrypoint: /bin/bash
@@ -66,4 +68,6 @@ services:
     user: ${USER}
     group_add:
       - ${OUTSIDE_GROUP}
+    environment:
+      - TFHUB_CACHE_DIR=/home/${USER}/tfhub_modules
 

@@ -4,6 +4,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.estimator.model_fn import EstimatorSpec, ModeKeys
 import tensorflow.contrib.slim as slim
+import tensorflow_hub as hub
 #tf.enable_eager_execution()
 
 import numpy as np
@@ -13,6 +14,7 @@ from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
 from utils.opencv import get_video_frames
+#from preprocessing import preprocessing
 
 tf.app.flags.DEFINE_string(
     'model_name', 'i3d', 'The name of the cnn to train.')
@@ -168,7 +170,9 @@ def input_fn(videos_in_split, labels,
         snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
         snippet.set_shape([snippet_size] + list(image_size) + [3])
         snippet = tf.squeeze(snippet)
-        snippet = tf.Print(snippet, [snippet], 'snippet shape')
+#        preprocess_image
+
+        print('snippet shape: ', snippet.shape)
         
         return (snippet, tf.one_hot(table.lookup(label), num_classes))
 
@@ -193,32 +197,27 @@ def input_fn(videos_in_split, labels,
 def keras_model():
 
     if FLAGS.model_name == 'i3d-keras':
-        keras_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
-    # if FLAGS.model_name == 'i3d-sonnet':
-    #     keras_model = i3d.InceptionI3d(num_classes=len(labels))
+        base_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
     elif FLAGS.model_name == 'mobilenet-3d':
         print('TODO')
     elif FLAGS.model_name == 'mobilenet':
         base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
-        top_model = tf.keras.models.Sequential()
-        top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
-        top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
-        keras_model = tf.keras.Model(inputs=base_model.input, outputs=top_model(base_model.output))
     elif FLAGS.model_name == 'inception-v3':
-        keras_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
+        base_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
     elif FLAGS.model_name == 'inception-v4':
-        keras_model = keras_inception_v4.create_model(num_classes=2, include_top=False)
+        base_model = keras_inception_v4.create_model(num_classes=2, include_top=False)
     elif FLAGS.model_name == 'VGG16':
         base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
-        top_model = tf.keras.models.Sequential()
-        top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
-        top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
-        keras_model = tf.keras.Model(inputs=base_model.input, outputs=top_model(base_model.output))
     else:
         raise ValueError('Unsupported deep network model')
 
-    for layer in keras_model.layers[:-4]:
-        layer.trainable = False
+    top_model = tf.keras.models.Sequential()
+    top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
+    top_model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
+    keras_model = tf.keras.Model(inputs=base_model.input, outputs=top_model(base_model.output))
+
+    # for layer in keras_model.layers[:-4]:
+    #     layer.trainable = False
 
     keras_model.compile(optimizer=tf.keras.optimizers.SGD(lr=0.0001, momentum=0.9),
                         loss='categorical_crossentropy',
@@ -229,8 +228,8 @@ def keras_model():
 def model_fn(features, labels, mode, params=None, config=None):
     train_op = None
     loss = None
-    eval_metrics = None
     predictions = None
+
     if FLAGS.model_name == 'i3d-sonnet':
         i3d_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
         predictions, end_points = i3d_model(features, is_training=False, dropout_keep_prob=1.0)
@@ -241,30 +240,6 @@ def model_fn(features, labels, mode, params=None, config=None):
         global_step = tf.train.get_or_create_global_step()
         learning_rate = helpers.configure_learning_rate(FLAGS, 10000, global_step)
         optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
-#         summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
-# #        summaries.add(slim.OPTIMIZER_SUMMARIES)
-#         summaries.add(tf.summary.scalar('learning_rate', learning_rate))
-#         # for loss in tf.get_collection(tf.GraphKeys.LOSSES, first_clone_scope):
-#         #     summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
-
-#         # Add summaries for variables.
-#         for variable in slim.get_model_variables():
-#             summaries.add(tf.summary.histogram(variable.op.name, variable))
-
-#         #########################################################
-#         ## Calculation of the averaged accuracy for all clones ##
-#         #########################################################
-
-#         # Accuracy for all clones.
-#         accuracy = tf.get_collection('accuracy')
-
-#         # Stack and take the mean.
-#         accuracy = tf.reduce_mean(tf.stack(accuracy, axis=0))
-
-#         # Add summaries for accuracy.
-#         summaries.add(tf.summary.scalar('accuracy/training', accuracy))
-
-#         #summary_op = tf.summary.merge(list(summaries), name='summary_op')
 
         train_op = slim.optimize_loss(loss=loss,
                                         global_step=global_step,
@@ -273,12 +248,70 @@ def model_fn(features, labels, mode, params=None, config=None):
                                         optimizer=optimizer,
                                         summaries=slim.OPTIMIZER_SUMMARIES
                                         )
-    # elif mode == ModeKeys.PREDICT:
-    #     raise NotImplementedError
-    # elif mode == ModeKeys.EVAL:
+    elif mode == ModeKeys.PREDICT:
+        predicted_classes = tf.argmax(end_points['Logits'], 1)
+        predictions = {
+        'class_ids': predicted_classes[:, tf.newaxis],
+        'probabilities': tf.nn.softmax(end_points['Logits']),
+        'logits': end_points['Logits'],
+        }
+#    elif mode == ModeKeys.EVAL:
+
+    accuracy = tf.metrics.accuracy(labels=labels,
+                               predictions=predicted_classes,
+                               name='acc_op')
+    accuracy = tf.reduce_mean(tf.stack(accuracy, axis=0))
+    eval_metrics = {'accuracy': accuracy}
+    tf.summary.scalar('accuracy/training', accuracy[1])
 
     return EstimatorSpec(train_op=train_op, loss=loss, eval_metric_ops=eval_metrics, predictions=predictions,
                             mode=mode)
+
+def adjust_image(data):
+    # Reshape to [batch, height, width, channels].
+    imgs = tf.reshape(data, [-1, 28, 28, 1])
+    # Adjust image size to Inception-v3 input.
+    imgs = tf.image.resize_images(imgs, (299, 299))
+    # Convert to RGB image.
+    imgs = tf.image.grayscale_to_rgb(imgs)
+    return imgs
+
+def inceptionv3_model_fn(features, labels, mode):
+    # Load Inception-v3 model.
+    module = hub.Module("https://tfhub.dev/google/imagenet/inception_v3/feature_vector/1")
+    input_layer = adjust_image(features["x"])
+    outputs = module(input_layer)
+
+    logits = tf.layers.dense(inputs=outputs, units=10)
+
+    predictions = {
+        # Generate predictions (for PREDICT and EVAL mode)
+        "classes": tf.argmax(input=logits, axis=1),
+        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
+        # `logging_hook`.
+        "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
+    }
+
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+
+    # Calculate Loss (for both TRAIN and EVAL modes)
+    loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+
+    # Configure the Training Op (for TRAIN mode)
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        train_op = optimizer.minimize(
+            loss=loss,
+            global_step=tf.train.get_global_step())
+        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+
+    # Add evaluation metrics (for EVAL mode)
+    eval_metric_ops = {
+        "accuracy": tf.metrics.accuracy(
+            labels=labels, predictions=predictions["classes"])}
+    return tf.estimator.EstimatorSpec(
+        mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
 def create_estimator():
@@ -298,10 +331,14 @@ def create_estimator():
                                     save_summary_steps=100)
 
 
-    if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3']):
+    if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     if(FLAGS.model_name in ['i3d-sonnet']):
         estimator = tf.estimator.Estimator(model_fn=model_fn,
+                                                config=config,
+                                                model_dir=config.model_dir)
+    if(FLAGS.model_name in ['inception-v3-hub']):
+        estimator = tf.estimator.Estimator(model_fn=inceptionv3_model_fn,
                                                 config=config,
                                                 model_dir=config.model_dir)
 
