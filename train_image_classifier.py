@@ -2,14 +2,16 @@ import os
 import time
 
 import tensorflow as tf
+from tensorflow.python.estimator.model_fn import EstimatorSpec, ModeKeys
+import tensorflow.contrib.slim as slim
 #tf.enable_eager_execution()
 
 import numpy as np
 
-import nets
+from nets import i3d, keras_i3d, keras_inception_v4
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
-import utils.sets_helper as helper
+import utils.helpers as helpers
 from utils.opencv import get_video_frames
 
 tf.app.flags.DEFINE_string(
@@ -29,7 +31,7 @@ tf.app.flags.DEFINE_boolean(
 tf.app.flags.DEFINE_string(
     'split_number', 's1', 'Split number to be used.')
 tf.app.flags.DEFINE_string(
-    'split_type', '2D', 'Set type to be used.')
+    'split_type', '3D', 'Set type to be used.')
 tf.app.flags.DEFINE_integer(
     'num_gpus', 2, 'The number of gpus that should be used')
 tf.app.flags.DEFINE_integer(
@@ -54,6 +56,88 @@ tf.app.flags.DEFINE_string(
     'gpu_to_use', '', 'gpus to use')
 
 
+######################
+# Optimization Flags #
+######################
+
+tf.app.flags.DEFINE_float(
+    'weight_decay', 0.00004, 'The weight decay on the model weights.')
+#    'weight_decay', 0.005, 'The weight decay on the model weights.')
+
+tf.app.flags.DEFINE_string(
+    'optimizer', 'rmsprop',
+    'The name of the optimizer, one of "adadelta", "adagrad", "adam",'
+    '"ftrl", "momentum", "sgd" or "rmsprop".')
+
+tf.app.flags.DEFINE_float(
+    'adadelta_rho', 0.95,
+    'The decay rate for adadelta.')
+
+tf.app.flags.DEFINE_float(
+    'adagrad_initial_accumulator_value', 0.1,
+    'Starting value for the AdaGrad accumulators.')
+
+tf.app.flags.DEFINE_float(
+    'adam_beta1', 0.9,
+    'The exponential decay rate for the 1st moment estimates.')
+
+tf.app.flags.DEFINE_float(
+    'adam_beta2', 0.999,
+    'The exponential decay rate for the 2nd moment estimates.')
+
+tf.app.flags.DEFINE_float('opt_epsilon', 1.0, 'Epsilon term for the optimizer.')
+
+tf.app.flags.DEFINE_float('ftrl_learning_rate_power', -0.5,
+                          'The learning rate power.')
+
+tf.app.flags.DEFINE_float(
+    'ftrl_initial_accumulator_value', 0.1,
+    'Starting value for the FTRL accumulators.')
+
+tf.app.flags.DEFINE_float(
+    'ftrl_l1', 0.0, 'The FTRL l1 regularization strength.')
+
+tf.app.flags.DEFINE_float(
+    'ftrl_l2', 0.0, 'The FTRL l2 regularization strength.')
+
+tf.app.flags.DEFINE_float(
+    'momentum', 0.9,
+    'The momentum for the MomentumOptimizer and RMSPropOptimizer.')
+
+tf.app.flags.DEFINE_float('rmsprop_momentum', 0.9, 'Momentum.')
+
+tf.app.flags.DEFINE_float('rmsprop_decay', 0.9, 'Decay term for RMSProp.')
+
+#######################
+# Learning Rate Flags #
+#######################
+
+tf.app.flags.DEFINE_string(
+    'learning_rate_decay_type',
+    'exponential',
+    'Specifies how the learning rate is decayed. One of "fixed", "exponential",'
+    ' or "polynomial"')
+
+#tf.app.flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
+tf.app.flags.DEFINE_float('learning_rate', 0.0001, 'Initial learning rate.')
+
+tf.app.flags.DEFINE_float(
+    'end_learning_rate', 0.00000001,
+    'The minimal end learning rate used by a polynomial decay learning rate.')
+
+tf.app.flags.DEFINE_float(
+    'label_smoothing', 0.0, 'The amount of label smoothing.')
+
+tf.app.flags.DEFINE_float(
+    'learning_rate_decay_factor', 0.94, 'Learning rate decay factor.')
+
+tf.app.flags.DEFINE_float(
+    'num_epochs_per_decay', 1.0,
+    'Number of epochs after which learning rate decays.')
+
+
+
+
 labels = ['Porn', 'NonPorn']
 labels = ['1', '0']
 FLAGS = tf.app.flags.FLAGS
@@ -73,25 +157,23 @@ def input_fn(videos_in_split, labels,
         frame_info = tf.string_split([frame_identificator], delimiter='_')
         video_name = frame_info.values[0]
         label = frame_info.values[1]
-        frame_number = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
         video_path = tf.string_join( inputs=[os.path.join(FLAGS.dataset_dir, 'videos'), '/' , video_name, '.mp4'])
-        if ('3D' in FLAGS.split_type):
-            with open(os.path.join(helper.assembly_sets_path(FLAGS), video_name,  '{}.txt'.format(frame_identificator)), 'r') as f:
-                frames = f.read().split('\n')
-            snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.double], stateful=False, name='retrieve_snippet')
-        else:
-            frames = [frame_number]
-            snippet = tf.py_func(get_video_frames, [video_path, frames, image_size], [tf.double], stateful=False, name='retrieve_snippet')
-        
+
+        snippet_path = tf.string_join( inputs=[helpers.assembly_snippets_path(FLAGS), '/', video_name, '/', frame_identificator, '.txt' , ])
+        frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
+
+        snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], [tf.double], stateful=False, name='retrieve_snippet')
         snippet = tf.cast(snippet,tf.float32)
         snippet = tf.stack(snippet)
-        snippet.set_shape([len(frames)] + list(image_size) + [3])
+        snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
+        snippet.set_shape([snippet_size] + list(image_size) + [3])
         snippet = tf.squeeze(snippet)
+        snippet = tf.Print(snippet, [snippet], 'snippet shape')
         
         return (snippet, tf.one_hot(table.lookup(label), num_classes))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
-    print('len ########: ', len(videos_in_split))
+    print('dataset len: ', len(videos_in_split))
 
     if num_epochs is not None and shuffle:
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size, num_epochs))
@@ -110,8 +192,10 @@ def input_fn(videos_in_split, labels,
 
 def keras_model():
 
-    if FLAGS.model_name == 'i3d':
-        keras_model = nets.keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
+    if FLAGS.model_name == 'i3d-keras':
+        keras_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
+    # if FLAGS.model_name == 'i3d-sonnet':
+    #     keras_model = i3d.InceptionI3d(num_classes=len(labels))
     elif FLAGS.model_name == 'mobilenet-3d':
         print('TODO')
     elif FLAGS.model_name == 'mobilenet':
@@ -123,7 +207,7 @@ def keras_model():
     elif FLAGS.model_name == 'inception-v3':
         keras_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
     elif FLAGS.model_name == 'inception-v4':
-        keras_model = nets.keras_inception_v4.create_model(num_classes=2, include_top=False)
+        keras_model = keras_inception_v4.create_model(num_classes=2, include_top=False)
     elif FLAGS.model_name == 'VGG16':
         base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(labels))
         top_model = tf.keras.models.Sequential()
@@ -137,10 +221,65 @@ def keras_model():
         layer.trainable = False
 
     keras_model.compile(optimizer=tf.keras.optimizers.SGD(lr=0.0001, momentum=0.9),
-                          loss='categorical_crossentropy',
-                          metrics=['accuracy'])
+                        loss='categorical_crossentropy',
+                        metrics=['accuracy'])
 
     return keras_model
+
+def model_fn(features, labels, mode, params=None, config=None):
+    train_op = None
+    loss = None
+    eval_metrics = None
+    predictions = None
+    if FLAGS.model_name == 'i3d-sonnet':
+        i3d_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
+        predictions, end_points = i3d_model(features, is_training=False, dropout_keep_prob=1.0)
+        loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=end_points['Logits'])
+
+
+    if mode == ModeKeys.TRAIN:
+        global_step = tf.train.get_or_create_global_step()
+        learning_rate = helpers.configure_learning_rate(FLAGS, 10000, global_step)
+        optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
+#         summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
+# #        summaries.add(slim.OPTIMIZER_SUMMARIES)
+#         summaries.add(tf.summary.scalar('learning_rate', learning_rate))
+#         # for loss in tf.get_collection(tf.GraphKeys.LOSSES, first_clone_scope):
+#         #     summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
+
+#         # Add summaries for variables.
+#         for variable in slim.get_model_variables():
+#             summaries.add(tf.summary.histogram(variable.op.name, variable))
+
+#         #########################################################
+#         ## Calculation of the averaged accuracy for all clones ##
+#         #########################################################
+
+#         # Accuracy for all clones.
+#         accuracy = tf.get_collection('accuracy')
+
+#         # Stack and take the mean.
+#         accuracy = tf.reduce_mean(tf.stack(accuracy, axis=0))
+
+#         # Add summaries for accuracy.
+#         summaries.add(tf.summary.scalar('accuracy/training', accuracy))
+
+#         #summary_op = tf.summary.merge(list(summaries), name='summary_op')
+
+        train_op = slim.optimize_loss(loss=loss,
+                                        global_step=global_step,
+                                        learning_rate=0.001,
+                                        clip_gradients=10.0,
+                                        optimizer=optimizer,
+                                        summaries=slim.OPTIMIZER_SUMMARIES
+                                        )
+    # elif mode == ModeKeys.PREDICT:
+    #     raise NotImplementedError
+    # elif mode == ModeKeys.EVAL:
+
+    return EstimatorSpec(train_op=train_op, loss=loss, eval_metric_ops=eval_metrics, predictions=predictions,
+                            mode=mode)
+
 
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
@@ -151,44 +290,29 @@ def create_estimator():
 
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     session_config=sess_config,
-                                    model_dir=helper.assembly_model_dir(FLAGS),
+                                    model_dir=helpers.assembly_model_dir(FLAGS),
                                     tf_random_seed=1,
-                                    save_checkpoints_secs=3600,
+                                    save_checkpoints_secs=600,
                                     keep_checkpoint_every_n_hours=1,
                                     keep_checkpoint_max=10,
                                     save_summary_steps=100)
 
 
-    estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
-    
-
+    if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3']):
+       estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
+    if(FLAGS.model_name in ['i3d-sonnet']):
+        estimator = tf.estimator.Estimator(model_fn=model_fn,
+                                                config=config,
+                                                model_dir=config.model_dir)
 
     return estimator
-
-def check_and_create_directories():
-    directories = [helper.assembly_model_dir(FLAGS)]
-
-    for directory in directories:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-def get_splits():
-    network_training_set = []
-    network_validation_set = []
-
-    with open(os.path.join(helper.assembly_sets_path(FLAGS), 'network_training_set.txt'), 'r') as f:
-        network_training_set = f.readlines()
-    with open(os.path.join(helper.assembly_sets_path(FLAGS), 'network_validation_set.txt'), 'r') as f:
-        network_validation_set = f.readlines()
-
-    return network_training_set, network_validation_set
 
 def main():
     if FLAGS.gpu_to_use:
         os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu_to_use
 
-    check_and_create_directories()
-    network_training_set, network_validation_set = get_splits()
+    helpers.check_and_create_directories(FLAGS)
+    network_training_set, network_validation_set = helpers.get_splits(FLAGS)
 
     estimator = create_estimator()
     time_hist = TimeHistory()
@@ -214,15 +338,6 @@ def main():
                                             steps=None,
                                             throttle_secs=FLAGS.eval_interval_secs)
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-    # estimator.train(lambda:input_fn(network_training_set,
-    #                                         labels,
-    #                                         shuffle=True,
-    #                                         batch_size=FLAGS.batch_size,
-    #                                         buffer_size=2048,
-    #                                         num_epochs=FLAGS.epochs,
-    #                                         prefetch_buffer_size=4),
-    #                                         steps=50,
-    #                                         hooks=[time_hist])
 
     total_time =  sum(time_hist.times)
     print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')
@@ -233,5 +348,5 @@ def main():
 
 
 if __name__ == '__main__':
-    #tf.logging.set_verbosity(tf.logging.INFO)
+    tf.logging.set_verbosity(tf.logging.INFO)
     main()

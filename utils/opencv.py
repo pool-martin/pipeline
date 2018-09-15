@@ -14,10 +14,19 @@ def get_video_params(video_path):
     return frame_count, fps, height, width
 
 
-def get_video_frames(video_path, frame_numbers, image_size):
+def get_video_frames(video_path, frames_identificator, snippet_path, image_size, split_type):
     video_frames = []
 
     video_path = video_path.decode("utf-8") 
+
+    if(split_type.decode("utf-8") == '2D'):
+        frame_numbers = [frames_identificator]
+    elif(split_type.decode("utf-8") == '3D'):
+        with open(snippet_path.decode("utf-8"), 'r') as f:
+            frame_numbers = f.read().split('\n')[:-1]
+        # print(video_path)
+        # print( frame_numbers )
+        frame_numbers = [float(number) for number in frame_numbers]
 
     cap = cv2.VideoCapture(video_path)
     if (cap.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path))
@@ -46,7 +55,7 @@ def show_video_frame(video_name, frame_no):
     fps =  int(cap.get(cv2.CAP_PROP_FPS))
     print('count: {}, fps: {}'.format(frame_count, fps))
 
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no);
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
 
     #Read the next frame from the video. If you set frame 749 above then the code will return the last frame.
     ret, frame = cap.read()
