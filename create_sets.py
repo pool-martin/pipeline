@@ -77,7 +77,7 @@ def define_snippet_bounds(labels, position, frame_position, fps, frame_count, bo
     if position >= labels[0][1][0] and frame_position <= frame_count:
         if ('frame' in bound_unit):
             snippet_begin = int(math.floor(labels[0][1][0] * fps))
-            snippet_end = frame_count
+            snippet_end = frame_count -1
         return snippet_begin, snippet_end
 
     for label in labels:
