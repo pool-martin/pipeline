@@ -269,7 +269,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         predictions, end_points = i3d_model(features, is_training=True, dropout_keep_prob=1.0)
         loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=end_points['Logits'])
         predicted_classes = tf.argmax(end_points['Logits'], 1)
-        learning_rate = helpers.configure_learning_rate(FLAGS, 10000, global_step)
+        learning_rate = helpers.configure_learning_rate(FLAGS, 33000, global_step)
         optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
 
         train_op = slim.optimize_loss(loss=loss,
