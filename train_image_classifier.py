@@ -370,7 +370,7 @@ def create_estimator():
                                                 model_dir=config.model_dir)
     if(FLAGS.model_name in ['inception-v3-hub']):
         estimator = tf.estimator.Estimator(model_fn=inceptionv3_model_fn,
-#                                                config=config,
+                                                config=config,
                                                 model_dir=config.model_dir)
 
     return estimator
@@ -407,7 +407,7 @@ def main():
                                             num_epochs=1),
                                             steps=None,
                                             throttle_secs=FLAGS.eval_interval_secs)
-#    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
     # estimator.train(input_fn=lambda:input_fn(network_training_set,
     #                                         labels,
@@ -425,12 +425,12 @@ def main():
     #                                         prefetch_buffer_size=4),steps=int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size))
 
    # outfile = open(FLAGS.output_file, 'w') if FLAGS.output_file else sys.stdout
-    results = estimator.predict( input_fn=lambda:input_fn(network_validation_set,
-                                            labels, 
-                                            shuffle=False,
-                                            batch_size=FLAGS.batch_size,
-                                            buffer_size=2048,
-                                            num_epochs=1) )
+    # results = estimator.predict( input_fn=lambda:input_fn(network_validation_set,
+    #                                         labels, 
+    #                                         shuffle=False,
+    #                                         batch_size=FLAGS.batch_size,
+    #                                         buffer_size=2048,
+    #                                         num_epochs=1) )
     for result in results:
         print('result: {}'.format(result))
 
