@@ -137,8 +137,27 @@ tf.app.flags.DEFINE_float(
     'num_epochs_per_decay', 1.0,
     'Number of epochs after which learning rate decays.')
 
+#######################
+# Extraction Flags #
+#######################
 
+tf.app.flags.DEFINE_string(
+  'output_file', None, 'File to output predictions or features, by default the standard output.')
 
+tf.app.flags.DEFINE_string(
+  'metrics_file', None, 'File to append metrics, in addition to the standard output.')
+
+tf.app.flags.DEFINE_string(
+  'output_format', 'text', 'Format of the output: text or (only with --extract_features) pickle.')
+
+tf.app.flags.DEFINE_bool(
+  'extract_features', False,
+  'Extracts features instead of predictions to output_file. No metrics will be computed.')
+
+tf.app.flags.DEFINE_string(
+  'inception_layer', 'PreLogitsFlatten',
+  'Network Layer used to extrack features. Valid options are one of network layers. '
+  'Must be used with --extract_features')
 
 labels = ['Porn', 'NonPorn']
 labels = ['1', '0']
@@ -164,10 +183,14 @@ def input_fn(videos_in_split, labels,
         snippet_path = tf.string_join( inputs=[helpers.assembly_snippets_path(FLAGS), '/', video_name, '/', frame_identificator, '.txt' , ])
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
 
-        snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], [tf.double], stateful=False, name='retrieve_snippet')
-        snippet = tf.cast(snippet,tf.float32)
-        snippet = tf.stack(snippet)
+        snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
+        # print('snippet shape: ', snippet[0].shape, 'len', len(snippet))
+
+        # snippet = [tf.image.convert_image_dtype(item, dtype=tf.float32) for item in snippet]
+        snippet = tf.image.per_image_standardization(snippet)
         snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
+
+        # snippet = tf.stack(snippet)
         snippet.set_shape([snippet_size] + list(image_size) + [3])
         snippet = tf.squeeze(snippet)
 #        preprocess_image
@@ -175,6 +198,9 @@ def input_fn(videos_in_split, labels,
         print('snippet shape: ', snippet.shape)
         
         return (snippet, tf.one_hot(table.lookup(label), num_classes))
+#        return (snippet, table.lookup(label))
+#        return (dict({'snippet':snippet}), tf.one_hot(table.lookup(label), num_classes))
+#        return (dict({'image':snippet}), table.lookup(label))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
     print('dataset len: ', len(videos_in_split))
@@ -229,15 +255,20 @@ def model_fn(features, labels, mode, params=None, config=None):
     train_op = None
     loss = None
     predictions = None
+    eval_metrics = None
 
     if FLAGS.model_name == 'i3d-sonnet':
         i3d_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
         predictions, end_points = i3d_model(features, is_training=False, dropout_keep_prob=1.0)
         loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=end_points['Logits'])
+        predicted_classes = tf.argmax(end_points['Logits'], 1)
 
 
     if mode == ModeKeys.TRAIN:
         global_step = tf.train.get_or_create_global_step()
+        predictions, end_points = i3d_model(features, is_training=True, dropout_keep_prob=1.0)
+        loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=end_points['Logits'])
+        predicted_classes = tf.argmax(end_points['Logits'], 1)
         learning_rate = helpers.configure_learning_rate(FLAGS, 10000, global_step)
         optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
 
@@ -249,7 +280,6 @@ def model_fn(features, labels, mode, params=None, config=None):
                                         summaries=slim.OPTIMIZER_SUMMARIES
                                         )
     elif mode == ModeKeys.PREDICT:
-        predicted_classes = tf.argmax(end_points['Logits'], 1)
         predictions = {
         'class_ids': predicted_classes[:, tf.newaxis],
         'probabilities': tf.nn.softmax(end_points['Logits']),
@@ -257,12 +287,12 @@ def model_fn(features, labels, mode, params=None, config=None):
         }
 #    elif mode == ModeKeys.EVAL:
 
-    accuracy = tf.metrics.accuracy(labels=labels,
-                               predictions=predicted_classes,
-                               name='acc_op')
-    accuracy = tf.reduce_mean(tf.stack(accuracy, axis=0))
-    eval_metrics = {'accuracy': accuracy}
-    tf.summary.scalar('accuracy/training', accuracy[1])
+    # accuracy = tf.metrics.accuracy(labels=labels,
+    #                            predictions=predicted_classes,
+    #                            name='acc_op')
+    # accuracy = tf.reduce_mean(tf.stack(accuracy, axis=0))
+    # eval_metrics = {'accuracy': accuracy}
+    # tf.summary.scalar('accuracy/training', accuracy[1])
 
     return EstimatorSpec(train_op=train_op, loss=loss, eval_metric_ops=eval_metrics, predictions=predictions,
                             mode=mode)
@@ -279,8 +309,9 @@ def adjust_image(data):
 def inceptionv3_model_fn(features, labels, mode):
     # Load Inception-v3 model.
     module = hub.Module("https://tfhub.dev/google/imagenet/inception_v3/feature_vector/1")
-    input_layer = adjust_image(features["x"])
-    outputs = module(input_layer)
+#    input_layer = adjust_image(features["snippet"])
+#    outputs = module(input_layer)
+    outputs = module(features)
 
     logits = tf.layers.dense(inputs=outputs, units=10)
 
@@ -339,7 +370,7 @@ def create_estimator():
                                                 model_dir=config.model_dir)
     if(FLAGS.model_name in ['inception-v3-hub']):
         estimator = tf.estimator.Estimator(model_fn=inceptionv3_model_fn,
-                                                config=config,
+#                                                config=config,
                                                 model_dir=config.model_dir)
 
     return estimator
@@ -353,6 +384,8 @@ def main():
 
     estimator = create_estimator()
     time_hist = TimeHistory()
+    tensors_to_log = {"probabilities": "softmax_tensor"}
+    logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
     tf.train.create_global_step()
 
     print('#######################', int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size))
@@ -374,7 +407,32 @@ def main():
                                             num_epochs=1),
                                             steps=None,
                                             throttle_secs=FLAGS.eval_interval_secs)
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+#    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+
+    # estimator.train(input_fn=lambda:input_fn(network_training_set,
+    #                                         labels,
+    #                                         shuffle=True,
+    #                                         batch_size=FLAGS.batch_size,
+    #                                         buffer_size=2048,
+    #                                         num_epochs=FLAGS.epochs,
+    #                                         prefetch_buffer_size=4),steps=150)
+    # estimator.evaluate(input_fn=lambda:input_fn(network_training_set,
+    #                                         labels,
+    #                                         shuffle=True,
+    #                                         batch_size=FLAGS.batch_size,
+    #                                         buffer_size=2048,
+    #                                         num_epochs=FLAGS.epochs,
+    #                                         prefetch_buffer_size=4),steps=int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size))
+
+   # outfile = open(FLAGS.output_file, 'w') if FLAGS.output_file else sys.stdout
+    results = estimator.predict( input_fn=lambda:input_fn(network_validation_set,
+                                            labels, 
+                                            shuffle=False,
+                                            batch_size=FLAGS.batch_size,
+                                            buffer_size=2048,
+                                            num_epochs=1) )
+    for result in results:
+        print('result: {}'.format(result))
 
     total_time =  sum(time_hist.times)
     print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')

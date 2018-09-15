@@ -42,10 +42,16 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
 
         # adhere to TS graph input structure
         numpy_frame = np.asarray(frame)
-        numpy_frame = cv2.normalize(numpy_frame.astype('float'), None, -0.5, .5, cv2.NORM_MINMAX)
+        #numpy_frame = cv2.normalize(numpy_frame.astype('float'), None, -0.5, .5, cv2.NORM_MINMAX)
+        #norm_image = cv2.normalize(numpy_frame, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
         # numpy_frame = np.expand_dims(numpy_frame, axis=0)
-        video_frames.append(numpy_frame)
-    return video_frames
+        video_frames.append(numpy_frame.astype('float32'))
+
+    results = np.stack(video_frames, axis=0)
+    # print(len(results), results.shape)
+    return results
+
 
 def show_video_frame(video_name, frame_no):
     #Open the video file
