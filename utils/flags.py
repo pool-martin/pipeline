@@ -129,7 +129,7 @@ def define_flags():
     'metrics_file', None, 'File to append metrics, in addition to the standard output.')
 
     tf.app.flags.DEFINE_string(
-    'output_format', 'text', 'Format of the output: text or (only with --extract_features) pickle.')
+    'output_format', 'pickle', 'Format of the output: text or pickle.')
 
     tf.app.flags.DEFINE_bool(
         'predict_and_extract', False,
