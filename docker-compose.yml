@@ -43,7 +43,7 @@ services:
     tty: true
     working_dir: /workspace
     image: ${USER}-pipeline-cpu:v1
-    mem_limit: 1024m
+    mem_limit: 4096m
     cpu_percent: 80
     build:
       context: .

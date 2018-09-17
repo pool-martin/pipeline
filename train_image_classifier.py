@@ -9,14 +9,16 @@ import tensorflow_hub as hub
 
 import numpy as np
 
-from nets import i3d, keras_i3d, keras_inception_v4
+from nets import i3d, inception_v4
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
 from utils.opencv import get_video_frames
-#from preprocessing import preprocessing
+from utils.flags import define_flags
+from utils.save_features import save_extracted_features
+from preprocessing import preprocessing_factory
 
-FLAGS = helpers.define_flags()
+FLAGS = define_flags()
 
 # Global vars
 dataset_labels = ['NonPorn', 'Porn']
@@ -33,6 +35,8 @@ def input_fn(videos_in_split,
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
 
+    image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict_and_extract)
+
     def _map_func(frame_identificator):
         frame_info = tf.string_split([frame_identificator], delimiter='_')
         video_name = frame_info.values[0]
@@ -43,14 +47,16 @@ def input_fn(videos_in_split,
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
 
         snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
-        snippet = tf.image.per_image_standardization(snippet)
         snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
 
         snippet.set_shape([snippet_size] + list(image_size) + [3])
-        snippet = tf.squeeze(snippet)
 
-        print('snippet shape: ', snippet.shape)
-        return (snippet, table.lookup(label))
+        snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, image_size[0], image_size[1],
+                                                                normalize_per_image=FLAGS.normalize_per_image), snippet)
+        snippet = tf.squeeze(snippet)
+        
+        snippet_id = tf.string_join( inputs=[video_name, '_', frame_info.values[2] ] )
+        return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(label) }, table.lookup(label))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
     print('dataset len: ', len(videos_in_split))
@@ -72,16 +78,16 @@ def input_fn(videos_in_split,
 
 def keras_model():
 
-    if FLAGS.model_name == 'i3d-keras':
-        base_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
-    elif FLAGS.model_name == 'mobilenet-3d':
-        print('TODO')
+    # if FLAGS.model_name == 'i3d-keras':
+    #     base_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
+    # elif FLAGS.model_name == 'inception-v4':
+    #     base_model = keras_inception_v4.create_model(num_classes=2, include_top=False)
+    if FLAGS.model_name == 'mobilenet-3d':
+        raise ValueError('Unsupported deep network model')
     elif FLAGS.model_name == 'mobilenet':
         base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
     elif FLAGS.model_name == 'inception-v3':
         base_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
-    elif FLAGS.model_name == 'inception-v4':
-        base_model = keras_inception_v4.create_model(num_classes=2, include_top=False)
     elif FLAGS.model_name == 'VGG16':
         base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
     else:
@@ -110,32 +116,50 @@ def model_fn(features, labels, mode, params=None, config=None):
     loss = None
     predictions = None
 
-    if FLAGS.model_name == 'i3d-sonnet':
-        dnn_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
-        probabilities, end_points = dnn_model(features, is_training=False, dropout_keep_prob=1.0)
-        logits = end_points['Logits']
+    if mode == ModeKeys.TRAIN:
+        is_training = True
+    else:
+        is_training = False
 
+    if FLAGS.model_name == 'i3d':
+        dnn_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
+        probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
+        logits = end_points['Logits']
+        extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+#        features = slim.flatten(end_points['Mixed_5c'], scope='Mixed_5cFlatten')
+
+    if FLAGS.model_name == 'inception-v4':
+        logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
+        probabilities = end_points['Predictions']
+        extracted_features = end_points['PreLogitsFlatten']
+    
     if mode in (ModeKeys.PREDICT, ModeKeys.EVAL):
-        predicted_indices = tf.argmax(probabilities, 1)
+        predicted_indices = tf.argmax(logits, axis=-1)
 
     if mode in (ModeKeys.TRAIN, ModeKeys.EVAL):
         global_step = tf.train.get_or_create_global_step()
-        loss = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(labels, len(dataset_labels)), logits=logits)
+        loss = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(features['label'], len(dataset_labels)), logits=logits)
         tf.summary.scalar('loss', loss)
 
     if mode == ModeKeys.PREDICT:
-      # Convert predicted_indices back into strings
-      predictions = {
-          'classes': tf.gather(tf.constant(dataset_labels), predicted_indices),
-          'scores': tf.reduce_max(probabilities, axis=1),
-          'probabilities': probabilities,
-          'logits': logits,
-      }
-      export_outputs = {
-          'prediction': tf.estimator.export.PredictOutput(predictions)
-      }
-      return tf.estimator.EstimatorSpec(
-          mode, predictions=predictions, export_outputs=export_outputs)
+#        features['snippet_id'] = tf.Print(features['snippet_id'].shape, [features['snippet_id']], 'snippet id shape')
+#        print('frame_info shape: ', frame_info.shape)
+        # Convert predicted_indices back into strings
+        print('_model_func label', features['label'])
+        tf.Print(features['label'], [features['label']], '_model_func label')
+        predictions = {
+           'snippet_id': features['snippet_id'],
+           'truth_label': features['label'],
+           'predicted_label': predicted_indices,
+           'probabilities': probabilities,
+           'features': extracted_features,
+           'scores': tf.reduce_max(probabilities, axis=1),
+           'logits': logits,
+        }
+        export_outputs = {
+            'prediction': tf.estimator.export.PredictOutput(predictions)
+        }
+        return tf.estimator.EstimatorSpec(mode, predictions=predictions, export_outputs=export_outputs)
 
     if mode == ModeKeys.TRAIN:
         #learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
@@ -152,7 +176,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         train_op = optimizer.minimize(
             loss=loss,
-            global_step=tf.train.get_global_step())
+            global_step=global_step)
 
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
 
@@ -163,54 +187,6 @@ def model_fn(features, labels, mode, params=None, config=None):
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
-
-def adjust_image(data):
-    # Reshape to [batch, height, width, channels].
-    imgs = tf.reshape(data, [-1, 28, 28, 1])
-    # Adjust image size to Inception-v3 input.
-    imgs = tf.image.resize_images(imgs, (299, 299))
-    # Convert to RGB image.
-    imgs = tf.image.grayscale_to_rgb(imgs)
-    return imgs
-
-def inceptionv3_model_fn(features, labels, mode):
-    # Load Inception-v3 model.
-    module = hub.Module("https://tfhub.dev/google/imagenet/inception_v3/feature_vector/1")
-#    input_layer = adjust_image(features["snippet"])
-#    outputs = module(input_layer)
-    outputs = module(features)
-
-    logits = tf.layers.dense(inputs=outputs, units=10)
-
-    predictions = {
-        # Generate predictions (for PREDICT and EVAL mode)
-        "classes": tf.argmax(input=logits, axis=1),
-        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
-        # `logging_hook`.
-        "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
-    }
-
-    if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
-
-    # Calculate Loss (for both TRAIN and EVAL modes)
-    loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
-
-    # Configure the Training Op (for TRAIN mode)
-    if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
-        train_op = optimizer.minimize(
-            loss=loss,
-            global_step=tf.train.get_global_step())
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
-
-    # Add evaluation metrics (for EVAL mode)
-    eval_metric_ops = {
-        "accuracy": tf.metrics.accuracy(
-            labels=labels, predictions=predictions["classes"])}
-    return tf.estimator.EstimatorSpec(
-        mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-
 
 def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
@@ -232,14 +208,13 @@ def create_estimator():
 
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
-    if(FLAGS.model_name in ['i3d-sonnet']):
+    elif(FLAGS.model_name in ['i3d', 'inception-v4']):
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
+                                                params=None,
                                                 model_dir=config.model_dir)
-    if(FLAGS.model_name in ['inception-v3-hub']):
-        estimator = tf.estimator.Estimator(model_fn=inceptionv3_model_fn,
-                                                config=config,
-                                                model_dir=config.model_dir)
+    else:
+        raise ValueError('Unsupported network model')
 
     return estimator
 
@@ -249,52 +224,47 @@ def main():
 
     helpers.check_and_create_directories(FLAGS)
 
-    # Getting validation and training sets
-    network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-    training_set_length = int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size)
-    validation_set_length = int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size)
-    print('training set length', training_set_length)
-    print('validation set length', validation_set_length)
-
     estimator = create_estimator()
     time_hist = TimeHistory()
-    tensors_to_log = {"probabilities": "softmax_tensor"}
-    logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
     tf.train.get_or_create_global_step()
 
-    train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
-                                            shuffle=True,
-                                            batch_size=FLAGS.batch_size,
-                                            num_epochs=FLAGS.epochs,
-                                            prefetch_buffer_size=FLAGS.batch_size * 3),
-                                            max_steps= int((FLAGS.epochs * training_set_length)/FLAGS.batch_size),
-                                            hooks=[time_hist])
+    if not FLAGS.predict_and_extract:
+        # Getting validation and training sets
+        network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+        training_set_length = int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size)
+        validation_set_length = int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size)
+        print('training set length', training_set_length)
+        print('validation set length', validation_set_length)
 
-    eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
-                                            shuffle=False,
-                                            batch_size=FLAGS.batch_size,
-                                            num_epochs=1),
-                                            steps=validation_set_length,
-                                            throttle_secs=FLAGS.eval_interval_secs)
-    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+        train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
+                                                    shuffle=True,
+                                                    batch_size=FLAGS.batch_size,
+                                                    num_epochs=FLAGS.epochs,
+                                                    prefetch_buffer_size=FLAGS.batch_size * 3),
+                                                max_steps= int((FLAGS.epochs * training_set_length)/FLAGS.batch_size),
+                                                hooks=[time_hist])
 
-    # estimator.evaluate(input_fn=lambda:input_fn(network_training_set,
-    #                                         labels,
-    #                                         shuffle=True,
-    #                                         batch_size=FLAGS.batch_size,
-    #                                         buffer_size=2048,
-    #                                         num_epochs=FLAGS.epochs,
-    #                                         prefetch_buffer_size=4),steps=int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size))
+        eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
+                                                    shuffle=False,
+                                                    batch_size=FLAGS.batch_size,
+                                                    num_epochs=1),
+                                                steps=validation_set_length,
+                                                throttle_secs=FLAGS.eval_interval_secs,
+                                                hooks=[time_hist])
+        tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    else:
+        sets_to_extract = helpers.get_sets_to_extract(FLAGS)
 
-   # outfile = open(FLAGS.output_file, 'w') if FLAGS.output_file else sys.stdout
-    # results = estimator.predict( input_fn=lambda:input_fn(network_validation_set,
-    #                                         labels, 
-    #                                         shuffle=False,
-    #                                         batch_size=FLAGS.batch_size,
-    #                                         buffer_size=2048,
-    #                                         num_epochs=1) )
-    # for result in results:
-    #     print('result: {}'.format(result))
+        for set_name, set_to_extract in sets_to_extract.items():
+            pred_generator = estimator.predict( input_fn=lambda:input_fn(set_to_extract,
+                                                    shuffle=False,
+                                                    batch_size=FLAGS.batch_size,
+                                                    num_epochs=1),
+                                                predict_keys=['snippet_id', 'truth_label', 'features'],
+                                                hooks=[time_hist])
+            save_extracted_features(FLAGS, set_name, set_to_extract, pred_generator)
+
+
 
     total_time =  sum(time_hist.times)
     print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')
