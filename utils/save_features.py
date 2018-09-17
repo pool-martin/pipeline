@@ -36,4 +36,4 @@ def save_extracted_features(FLAGS, set_name, set_to_extract, pred_generator):
             pickle.dump([snippet_id, label, feats], outfile)
         s += 1
         print('}', end='', file=sys.stderr)
-        print('', file=sys.stderr)
+    print('', file=sys.stderr)
