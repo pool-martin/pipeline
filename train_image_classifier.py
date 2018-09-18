@@ -60,7 +60,6 @@ def input_fn(videos_in_split,
         return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(label) }, table.lookup(label))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
-    print('dataset len: ', len(videos_in_split))
 
     if num_epochs is not None and shuffle:
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(len(videos_in_split), num_epochs))
@@ -159,8 +158,6 @@ def model_fn(features, labels, mode, params=None, config=None):
 
 
     if mode == ModeKeys.PREDICT:
-        print('_model_func label', features['label'])
-        tf.Print(features['label'], [features['label']], '_model_func label')
         predictions = {
            'snippet_id': features['snippet_id'],
            'truth_label': features['label'],
@@ -176,86 +173,49 @@ def model_fn(features, labels, mode, params=None, config=None):
         return tf.estimator.EstimatorSpec(mode, predictions=predictions, export_outputs=export_outputs, scaffold=scaffold)
 
     if mode == ModeKeys.TRAIN:
-        #learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
-        #optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
-        
-
-        #train_op = slim.optimize_loss(loss=loss,
-        #                                global_step=global_step,
-        #                                learning_rate=0.001,
-        #                                clip_gradients=10.0,
-        #                                optimizer=optimizer,
-        #                                summaries=slim.OPTIMIZER_SUMMARIES
-        #                                )
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-        train_op = optimizer.minimize(
-            loss=loss,
-            global_step=global_step)
-
-
+        learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
+        optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
+        train_op = optimizer.minimize(loss=loss, global_step=global_step)
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
 
     if mode == ModeKeys.EVAL:
         eval_metric_ops = {
-            'accuracy': tf.metrics.accuracy(labels, predicted_indices)
-            # 'auroc': tf.metrics.auc(tf.one_hot(labels, len(dataset_labels)), logits)
+            'accuracy': tf.metrics.accuracy(features['label'], predicted_indices),
+            'auroc': tf.metrics.auc(tf.one_hot(features['label'], len(dataset_labels)), logits)
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
+        tf.summary.scalar('auroc', eval_metric_ops['auroc'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-def create_estimator():
-    strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
-
+def create_estimator(current_set_length):
     sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     sess_config.gpu_options.allow_growth = True
-    #sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
 
-    # if FLAGS.num_gpus == 0:
-    #     distribution = tf.contrib.distribute.OneDeviceStrategy('device:CPU:0')
-    # elif FLAGS.num_gpus == 1:
-    #     distribution = tf.contrib.distribute.OneDeviceStrategy('device:GPU:0')
-    # else:
-    #     distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
+    if FLAGS.num_gpus == 0:
+        distribution = tf.contrib.distribute.OneDeviceStrategy('device:CPU:0')
+    elif FLAGS.num_gpus == 1:
+        distribution = tf.contrib.distribute.OneDeviceStrategy('device:GPU:0')
+    else:
+        distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-
-
-    config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
+    config = tf.estimator.RunConfig(train_distribute=distribution, 
                                     session_config=sess_config,
                                     model_dir=helpers.define_model_dir(FLAGS),
                                     tf_random_seed=1,
-                                    save_checkpoints_steps=(training_set_length / 2 ),
+                                    save_checkpoints_steps=int(current_set_length / 2 ),
                                     keep_checkpoint_max=32,
-                                    save_summary_steps= (training_set_length / 100),
+                                    save_summary_steps= (current_set_length / 100),
                                     log_step_count_steps = 100)
 
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'inception-v4']):
 
-        # if FLAGS.model_name == 'i3d':
-        #     ws_checkpoint = FLAGS.i3d_ws_checkpoint
-        #     exclude_from_ws_checkpoint = []
-
-        # elif FLAGS.model_name == 'inception-v4':
-        #     ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
-        #     exclude_from_ws_checkpoint = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-
-        #  _variables_to_restore = tf.contrib.slim.get_variables_to_restore(exclude=exclude_from_ws_checkpoint)
-        # # _variables_to_restore =  tf.global_variables()
-        # # _variables_to_restore = [v for v in _variables_to_restore if 'global_step' not in v.name ]
-        #  rgb_variable_map = {v.name.split(':')[0]: v.name for v in _variables_to_restore}
-    
-        # ws = tf.estimator.WarmStartSettings(
-        #     ckpt_to_initialize_from=ws_checkpoint)
-        #     # var_name_to_prev_var_name= teste_JP)
-        
-        ws = None
-
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
                                                 params=None,
                                                 model_dir=config.model_dir,
-                                                warm_start_from=ws)
+                                                warm_start_from=None)
     else:
         raise ValueError('Unsupported network model')
 
@@ -269,18 +229,20 @@ def main():
 
     time_hist = TimeHistory()
     tf.train.get_or_create_global_step()
-    estimator = create_estimator()
 
     if not FLAGS.predict_and_extract:
 
         # Getting validation and training sets
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+        global training_set_length
         training_set_length = len(network_training_set)
         validation_set_length = len(network_validation_set)
         training_set_max_steps = int((FLAGS.epochs * training_set_length)/FLAGS.batch_size)
         validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
         print('training set length: {}, max steps: {}'.format(len(network_training_set), training_set_max_steps))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+
+        estimator = create_estimator(training_set_length)
 
         train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
                                                     shuffle=True,
@@ -303,6 +265,7 @@ def main():
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
 
         for set_name, set_to_extract in sets_to_extract.items():
+            estimator = create_estimator(len(set_to_extract))
             pred_generator = estimator.predict( input_fn=lambda:input_fn(set_to_extract,
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,

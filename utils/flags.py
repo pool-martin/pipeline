@@ -26,7 +26,7 @@ def define_flags():
     tf.app.flags.DEFINE_string(
         'split_type', '3D', 'Set type to be used.')
     tf.app.flags.DEFINE_integer(
-        'num_gpus', 2, 'The number of gpus that should be used')
+        'num_gpus', 1, 'The number of gpus that should be used')
     tf.app.flags.DEFINE_integer(
         'sample_rate', 5, 'sample rate of the dataset in fps')
     tf.app.flags.DEFINE_integer(
@@ -39,8 +39,6 @@ def define_flags():
         'epochs', 25, 'The number of epochs to run the training')
     tf.app.flags.DEFINE_integer(
         'eval_interval_secs', 3* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
-    tf.app.flags.DEFINE_boolean(
-        'distributed_run', False, 'split and sets dirs will be assembled or received.')
     tf.app.flags.DEFINE_string(
         'gpu_to_use', '', 'gpus to use')
 
@@ -121,7 +119,7 @@ def define_flags():
         'learning_rate_decay_factor', 0.94, 'Learning rate decay factor.')
 
     tf.app.flags.DEFINE_float(
-        'num_epochs_per_decay', 1.0,
+        'num_epochs_per_decay', 2.0,
         'Number of epochs after which learning rate decays.')
 
     #######################
