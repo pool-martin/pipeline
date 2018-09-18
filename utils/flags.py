@@ -36,7 +36,7 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'batch_size', 8, 'The number of snippets in the batch')
     tf.app.flags.DEFINE_integer(
-        'epochs', 2, 'The number of epochs to run the training')
+        'epochs', 25, 'The number of epochs to run the training')
     tf.app.flags.DEFINE_integer(
         'eval_interval_secs', 4* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
     tf.app.flags.DEFINE_boolean(
