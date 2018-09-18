@@ -72,7 +72,7 @@ def input_fn(videos_in_split,
     dataset = dataset.apply(
        tf.contrib.data.map_and_batch(map_func=_map_func,
                                      batch_size=batch_size,
-                                     num_parallel_calls=os.cpu_count()/2 ))
+                                     num_parallel_calls=int(os.cpu_count()/2) ))
     dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
     return dataset
 
