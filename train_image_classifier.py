@@ -145,8 +145,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
         scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
 
-    if mode in (ModeKeys.PREDICT, ModeKeys.EVAL):
-        predicted_indices = tf.argmax(logits, axis=-1)
+    predicted_indices = tf.argmax(logits, axis=-1)
 
     if mode in (ModeKeys.TRAIN, ModeKeys.EVAL):
         global_step = tf.train.get_or_create_global_step()
