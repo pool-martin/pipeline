@@ -19,7 +19,7 @@ def init_weights(scopes_to_exclude, patterns_to_exclude, path):
             variables_to_restore = [v for v in variables_to_restore if pattern not in v.name ]
 
         # Create the saver which will be used to restore the variables.
-        initializer_fn = tf.contrib.framework.assign_from_checkpoint_fn(model_path, variables_to_restore, ignore_missing_vars=False, reshape_variables=True)
+        initializer_fn = tf.contrib.framework.assign_from_checkpoint_fn(model_path, variables_to_restore, ignore_missing_vars=True, reshape_variables=True)
     else:
         print("could not find the fine tune ckpt at {}".format(path))
         exit()
