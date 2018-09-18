@@ -173,15 +173,25 @@ def model_fn(features, labels, mode, params=None, config=None):
         learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
         optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
         train_op = optimizer.minimize(loss=loss, global_step=global_step)
+        accuracy = slim.metrics.accuracy(features['label'], predicted_indices)
+        tf.summary.scalar('accuracy', accuracy)
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
 
     if mode == ModeKeys.EVAL:
         eval_metric_ops = {
             'accuracy': tf.metrics.accuracy(features['label'], predicted_indices),
-            'auroc': tf.metrics.auc(tf.one_hot(features['label'], len(dataset_labels)), logits)
+            'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
+            'auroc': tf.metrics.auc(tf.one_hot(features['label'], len(dataset_labels)), logits),
+            "mse": tf.metrics.mean_squared_error(features['label'], predicted_indices),
+            'precision': tf.metrics.precision(features['label'], predicted_indices),
+            'recall': tf.metrics.recall(features['label'], predicted_indices)
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
+        tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['accuracy'])
         tf.summary.scalar('auroc', eval_metric_ops['auroc'])
+        tf.summary.scalar('mse', eval_metric_ops['mse'])
+        tf.summary.scalar('precision', eval_metric_ops['precision'])
+        tf.summary.scalar('recall', eval_metric_ops['recall'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def create_estimator(current_set_length):
