@@ -73,7 +73,7 @@ def input_fn(videos_in_split,
        tf.contrib.data.map_and_batch(map_func=_map_func,
                                      batch_size=batch_size,
                                      num_parallel_calls=int(os.cpu_count()/2) ))
-    dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
+    dataset = dataset.prefetch(buffer_size= 8 * FLAGS.batch_size)
     return dataset
 
 
@@ -144,12 +144,11 @@ def model_fn(features, labels, mode, params=None, config=None):
         ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
         pattern_to_exclude = ['biases', "global_step"]
 
-    training_model_dir = helpers.assembly_model_dir(FLAGS)
-    if FLAGS.predict_from_initial_weigths or not(os.path.exists(training_model_dir) and (os.path.isdir(training_model_dir) and os.listdir(training_model_dir))):
+    model_dir = helpers.assembly_model_dir(FLAGS)
+    if FLAGS.predict_from_initial_weigths or not(os.path.exists(model_dir) and (os.path.isdir(model_dir) and os.listdir(model_dir))):
         #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
         scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_checkpoint))
 
-    
     if mode in (ModeKeys.PREDICT, ModeKeys.EVAL):
         predicted_indices = tf.argmax(logits, axis=-1)
 
@@ -174,7 +173,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         export_outputs = {
             'prediction': tf.estimator.export.PredictOutput(predictions)
         }
-        return tf.estimator.EstimatorSpec(mode, predictions=predictions, export_outputs=export_outputs)
+        return tf.estimator.EstimatorSpec(mode, predictions=predictions, export_outputs=export_outputs, scaffold=scaffold)
 
     if mode == ModeKeys.TRAIN:
         #learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
@@ -193,6 +192,7 @@ def model_fn(features, labels, mode, params=None, config=None):
             loss=loss,
             global_step=global_step)
 
+
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
 
     if mode == ModeKeys.EVAL:
@@ -203,7 +203,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-def create_estimator(checkpoint_path=None):
+def create_estimator():
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
     sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -217,11 +217,13 @@ def create_estimator(checkpoint_path=None):
     # else:
     #     distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
+
+
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     session_config=sess_config,
-                                    model_dir=checkpoint_path or helpers.assembly_model_dir(FLAGS),
+                                    model_dir=helpers.define_model_dir(FLAGS),
                                     tf_random_seed=1,
-                                    save_checkpoints_secs=(FLAGS.eval_interval_secs / 2 ),
+                                    save_checkpoints_steps=(training_set_length / 2 ),
                                     keep_checkpoint_max=32,
                                     save_summary_steps= (training_set_length / 100),
                                     log_step_count_steps = 100)
@@ -230,9 +232,9 @@ def create_estimator(checkpoint_path=None):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'inception-v4']):
 
-        if FLAGS.model_name == 'i3d':
-            ws_checkpoint = FLAGS.i3d_ws_checkpoint
-            exclude_from_ws_checkpoint = []
+        # if FLAGS.model_name == 'i3d':
+        #     ws_checkpoint = FLAGS.i3d_ws_checkpoint
+        #     exclude_from_ws_checkpoint = []
 
         # elif FLAGS.model_name == 'inception-v4':
         #     ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
@@ -247,9 +249,6 @@ def create_estimator(checkpoint_path=None):
         #     ckpt_to_initialize_from=ws_checkpoint)
         #     # var_name_to_prev_var_name= teste_JP)
         
-        # rgb_saver = tf.train.Saver(var_list=rgb_variable_map, reshape=True)
-        # rgb_saver.restore() (sess, _CHECKPOINT_PATHS['rgb_imagenet'])
-
         ws = None
 
         estimator = tf.estimator.Estimator(model_fn=model_fn,
@@ -270,14 +269,16 @@ def main():
 
     time_hist = TimeHistory()
     tf.train.get_or_create_global_step()
+    estimator = create_estimator()
 
     if not FLAGS.predict_and_extract:
-        estimator = create_estimator()
 
         # Getting validation and training sets
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-        training_set_max_steps = int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size)
-        validation_set_max_steps = int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size)
+        training_set_length = len(network_training_set)
+        validation_set_length = len(network_validation_set)
+        training_set_max_steps = int((FLAGS.epochs * training_set_length)/FLAGS.batch_size)
+        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
         print('training set length: {}, max steps: {}'.format(len(network_training_set), training_set_max_steps))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
@@ -300,10 +301,6 @@ def main():
         tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
     else:
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
-
-        if not tf.gfile.IsDirectory(FLAGS.checkpoint_path):
-            estimator = create_estimator(FLAGS.checkpoint_path)
-
 
         for set_name, set_to_extract in sets_to_extract.items():
             pred_generator = estimator.predict( input_fn=lambda:input_fn(set_to_extract,

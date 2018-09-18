@@ -39,6 +39,12 @@ def check_and_create_directories(FLAGS):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+def define_model_dir(FLAGS):
+    if FLAGS.predict_from_initial_weigths:
+        return None
+    else:
+        return assembly_model_dir(FLAGS)
+
 def get_splits(FLAGS):
     network_training_set = []
     network_validation_set = []

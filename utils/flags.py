@@ -38,7 +38,7 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'epochs', 25, 'The number of epochs to run the training')
     tf.app.flags.DEFINE_integer(
-        'eval_interval_secs', 4* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
+        'eval_interval_secs', 3* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
     tf.app.flags.DEFINE_boolean(
         'distributed_run', False, 'split and sets dirs will be assembled or received.')
     tf.app.flags.DEFINE_string(
@@ -140,6 +140,7 @@ def define_flags():
     tf.app.flags.DEFINE_bool(
         'predict_and_extract', False,
         'Predict and extract features to output_file.')
+
     tf.app.flags.DEFINE_bool(
         'predict_from_initial_weigths', False,
         'Predict using initial imagenet or kinetics weigths.')
