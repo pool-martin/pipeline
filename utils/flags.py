@@ -8,9 +8,9 @@ def define_flags():
     tf.app.flags.DEFINE_string(
         'checkpoint_path', '', 'path to load seed weigths.')
     tf.app.flags.DEFINE_string(
-        'inception_v4_ws_checkpoint', '/DL/initial_weigths/inception_v4.ckpt', 'warm start checkpoint to be used.')
+        'inception_v4_ws_checkpoint', '/DL/initial_weigths/inception_v4/checkpoints/rbg_imagenet/', 'warm start checkpoint to be used.')
     tf.app.flags.DEFINE_string(
-        'i3d_ws_checkpoint', '/Exp/kinetics-i3d/data/checkpoints/rgb_imagenet/', 'warm start checkpoint to be used.')
+        'i3d_ws_checkpoint', '/DL/initial_weigths/i3d/checkpoints/rgb_imagenet', 'warm start checkpoint to be used.')
     tf.app.flags.DEFINE_string(
         'experiment_tag', 'initial_training', 'tag used in model dir places where we want to diferentiate subsequent executions.')
     tf.app.flags.DEFINE_string(
@@ -140,6 +140,9 @@ def define_flags():
     tf.app.flags.DEFINE_bool(
         'predict_and_extract', False,
         'Predict and extract features to output_file.')
+    tf.app.flags.DEFINE_bool(
+        'predict_from_initial_weigths', False,
+        'Predict using initial imagenet or kinetics weigths.')
 
     tf.app.flags.DEFINE_string(
         'inception_layer', 'PreLogitsFlatten',

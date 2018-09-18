@@ -16,6 +16,7 @@ import utils.helpers as helpers
 from utils.opencv import get_video_frames
 from utils.flags import define_flags
 from utils.save_features import save_extracted_features
+from utils import fine_tune
 from preprocessing import preprocessing_factory
 
 FLAGS = define_flags()
@@ -115,6 +116,8 @@ def model_fn(features, labels, mode, params=None, config=None):
     train_op = None
     loss = None
     predictions = None
+    scaffold = None
+
 
     if mode == ModeKeys.TRAIN:
         is_training = True
@@ -122,15 +125,30 @@ def model_fn(features, labels, mode, params=None, config=None):
         is_training = False
 
     if FLAGS.model_name == 'i3d':
-        dnn_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
-        probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
-        logits = end_points['Logits']
-        extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+        with tf.variable_scope('RGB'):
+            dnn_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
+            probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
+            logits = end_points['Logits']
+            extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+
+        scope_to_exclude = ["RGB/inception_i3d/Logits"]
+        ws_checkpoint = FLAGS.i3d_ws_checkpoint
+        pattern_to_exclude = []
+
 
     if FLAGS.model_name == 'inception-v4':
         logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
+        scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+        ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
+        pattern_to_exclude = ['biases', "global_step"]
+
+    training_model_dir = helpers.assembly_model_dir(FLAGS)
+    if FLAGS.predict_from_initial_weigths or not(os.path.exists(training_model_dir) and (os.path.isdir(training_model_dir) and os.listdir(training_model_dir))):
+        #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
+        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_checkpoint))
+
     
     if mode in (ModeKeys.PREDICT, ModeKeys.EVAL):
         predicted_indices = tf.argmax(logits, axis=-1)
@@ -140,14 +158,8 @@ def model_fn(features, labels, mode, params=None, config=None):
         loss = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(features['label'], len(dataset_labels)), logits=logits)
         tf.summary.scalar('loss', loss)
 
-    # variables_to_restore = tf.contrib.slim.get_variables_to_restore(exclude=exclude_from_initial_checkpoint)
-    # tf.train.init_from_checkpoint('inception_resnet_v2_2016_08_30.ckpt', 
-    #                           {v.name.split(':')[0]: v for v in variables_to_restore})
 
     if mode == ModeKeys.PREDICT:
-#        features['snippet_id'] = tf.Print(features['snippet_id'].shape, [features['snippet_id']], 'snippet id shape')
-#        print('frame_info shape: ', frame_info.shape)
-        # Convert predicted_indices back into strings
         print('_model_func label', features['label'])
         tf.Print(features['label'], [features['label']], '_model_func label')
         predictions = {
@@ -181,7 +193,7 @@ def model_fn(features, labels, mode, params=None, config=None):
             loss=loss,
             global_step=global_step)
 
-        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
+        return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
 
     if mode == ModeKeys.EVAL:
         eval_metric_ops = {
@@ -194,7 +206,7 @@ def model_fn(features, labels, mode, params=None, config=None):
 def create_estimator(checkpoint_path=None):
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-    sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
+    sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     sess_config.gpu_options.allow_growth = True
     #sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
 
@@ -221,14 +233,24 @@ def create_estimator(checkpoint_path=None):
         if FLAGS.model_name == 'i3d':
             ws_checkpoint = FLAGS.i3d_ws_checkpoint
             exclude_from_ws_checkpoint = []
-        elif FLAGS.model_name == 'inception-v4':
-            ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
-            exclude_from_ws_checkpoint = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
 
+        # elif FLAGS.model_name == 'inception-v4':
+        #     ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
+        #     exclude_from_ws_checkpoint = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+
+        #  _variables_to_restore = tf.contrib.slim.get_variables_to_restore(exclude=exclude_from_ws_checkpoint)
+        # # _variables_to_restore =  tf.global_variables()
+        # # _variables_to_restore = [v for v in _variables_to_restore if 'global_step' not in v.name ]
+        #  rgb_variable_map = {v.name.split(':')[0]: v.name for v in _variables_to_restore}
     
-        ws = tf.estimator.WarmStartSettings(
-            ckpt_to_initialize_from=ws_checkpoint,
-            vars_to_warm_start= tf.contrib.slim.get_variables_to_restore(exclude=exclude_from_ws_checkpoint))
+        # ws = tf.estimator.WarmStartSettings(
+        #     ckpt_to_initialize_from=ws_checkpoint)
+        #     # var_name_to_prev_var_name= teste_JP)
+        
+        # rgb_saver = tf.train.Saver(var_list=rgb_variable_map, reshape=True)
+        # rgb_saver.restore() (sess, _CHECKPOINT_PATHS['rgb_imagenet'])
+
+        ws = None
 
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
