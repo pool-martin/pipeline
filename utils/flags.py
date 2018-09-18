@@ -6,6 +6,8 @@ def define_flags():
     tf.app.flags.DEFINE_string(
         'model_dir', '/Exp/2kporn/experiments', 'path to save checkpoints.')
     tf.app.flags.DEFINE_string(
+        'checkpoint_path', '', 'path to load seed weigths.')
+    tf.app.flags.DEFINE_string(
         'experiment_tag', 'initial_training', 'tag used in model dir places where we want to diferentiate subsequent executions.')
     tf.app.flags.DEFINE_string(
         'dataset_dir', '/DL/2kporn/', 'The sets to be used.')
@@ -32,7 +34,7 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'epochs', 2, 'The number of epochs to run the training')
     tf.app.flags.DEFINE_integer(
-        'eval_interval_secs', 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
+        'eval_interval_secs', 4* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
     tf.app.flags.DEFINE_boolean(
         'distributed_run', False, 'split and sets dirs will be assembled or received.')
     tf.app.flags.DEFINE_string(

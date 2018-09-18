@@ -188,7 +188,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-def create_estimator():
+def create_estimator(checkpoint_path=None):
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
     sess_config = tf.ConfigProto()
@@ -197,13 +197,12 @@ def create_estimator():
 
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     session_config=sess_config,
-                                    model_dir=helpers.assembly_model_dir(FLAGS),
+                                    model_dir=checkpoint_path or helpers.assembly_model_dir(FLAGS),
                                     tf_random_seed=1,
-                                    save_checkpoints_secs=600,
-                                    keep_checkpoint_every_n_hours=3,
+                                    save_checkpoints_secs=(FLAGS.eval_interval_secs / 2 ),
                                     keep_checkpoint_max=32,
                                     save_summary_steps= (training_set_length / 100),
-                                    log_step_count_steps = 400)
+                                    log_step_count_steps = 100)
 
 
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
@@ -224,11 +223,12 @@ def main():
 
     helpers.check_and_create_directories(FLAGS)
 
-    estimator = create_estimator()
     time_hist = TimeHistory()
     tf.train.get_or_create_global_step()
 
     if not FLAGS.predict_and_extract:
+        estimator = create_estimator()
+
         # Getting validation and training sets
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
         training_set_length = int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size)
@@ -249,11 +249,16 @@ def main():
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=1),
                                                 steps=validation_set_length,
+                                                start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
                                                 hooks=[time_hist])
         tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
     else:
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
+
+        if not tf.gfile.IsDirectory(FLAGS.checkpoint_path):
+            estimator = create_estimator(FLAGS.checkpoint_path)
+
 
         for set_name, set_to_extract in sets_to_extract.items():
             pred_generator = estimator.predict( input_fn=lambda:input_fn(set_to_extract,
