@@ -129,24 +129,21 @@ def model_fn(features, labels, mode, params=None, config=None):
             probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
             logits = end_points['Logits']
             extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
-
         scope_to_exclude = ["RGB/inception_i3d/Logits"]
-        ws_checkpoint = FLAGS.i3d_ws_checkpoint
         pattern_to_exclude = []
 
 
-    if FLAGS.model_name == 'inception-v4':
+    if FLAGS.model_name == 'inception_v4':
         logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
         scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-        ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
         pattern_to_exclude = ['biases', "global_step"]
 
-    model_dir = helpers.assembly_model_dir(FLAGS)
-    if FLAGS.predict_from_initial_weigths or not(os.path.exists(model_dir) and (os.path.isdir(model_dir) and os.listdir(model_dir))):
+    if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
         #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
-        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_checkpoint))
+        ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
+        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
 
     if mode in (ModeKeys.PREDICT, ModeKeys.EVAL):
         predicted_indices = tf.argmax(logits, axis=-1)
@@ -198,7 +195,7 @@ def create_estimator(current_set_length):
     else:
         distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-    config = tf.estimator.RunConfig(train_distribute=distribution, 
+    config = tf.estimator.RunConfig(train_distribute=distribution if not helpers.is_first_run(FLAGS) else None, 
                                     session_config=sess_config,
                                     model_dir=helpers.define_model_dir(FLAGS),
                                     tf_random_seed=1,
@@ -209,7 +206,7 @@ def create_estimator(current_set_length):
 
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
-    elif(FLAGS.model_name in ['i3d', 'inception-v4']):
+    elif(FLAGS.model_name in ['i3d', 'inception_v4']):
 
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,

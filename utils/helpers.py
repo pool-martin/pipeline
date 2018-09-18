@@ -15,21 +15,21 @@ def assembly_snippets_path(FLAGS):
         snippets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), 'w_{}_l_{}'.format(FLAGS.snippet_width, FLAGS.snippet_size) )
     return snippets_path
 
+def assembly_ws_checkpoint_path(FLAGS):
+    '/DL/initial_weigths/inception_v4/rbg_imagenet'
+    return os.path.join(FLAGS.ws_checkpoint_dir, FLAGS.model_name, FLAGS.ws_checkpoint)
+
 def assembly_experiments_path(FLAGS):
-    experiment_path = os.path.join(FLAGS.model_dir, FLAGS.model_name, FLAGS.experiment_tag )
-    return experiment_path 
+    return os.path.join(FLAGS.model_dir, FLAGS.model_name, '{}_{}_{}'.format(FLAGS.experiment_tag, FLAGS.optimizer, FLAGS.ws_checkpoint) )
 
 def assembly_model_dir(FLAGS):
-    model_dir_path = os.path.join(assembly_experiments_path(FLAGS), 'checkpoints' )
-    return model_dir_path 
+    return os.path.join(assembly_experiments_path(FLAGS), 'checkpoints' )
 
 def assembly_extract_features_dir(FLAGS):
-    outfile = os.path.join(assembly_experiments_path(FLAGS), 'extracted_features' )
-    return outfile 
+    return os.path.join(assembly_experiments_path(FLAGS), 'extracted_features' )
 
 def assembly_extract_features_filename(FLAGS, set_name):
-    outfile = os.path.join(assembly_extract_features_dir(FLAGS), set_name )
-    return outfile 
+    return os.path.join(assembly_extract_features_dir(FLAGS), set_name )
 
 def check_and_create_directories(FLAGS):
     directories = [assembly_model_dir(FLAGS),
@@ -44,6 +44,10 @@ def define_model_dir(FLAGS):
         return None
     else:
         return assembly_model_dir(FLAGS)
+
+def is_first_run(FLAGS):
+    model_dir = assembly_model_dir(FLAGS)
+    return not(os.path.exists(model_dir) and (os.path.isdir(model_dir) and os.listdir(model_dir)))
 
 def get_splits(FLAGS):
     network_training_set = []
@@ -139,7 +143,6 @@ def configure_learning_rate(FLAGS, num_samples_per_epoch, global_step):
   decay_steps = int((num_samples_per_epoch / FLAGS.batch_size) * FLAGS.num_epochs_per_decay)
 #   if FLAGS.sync_replicas:
 #     decay_steps /= FLAGS.replicas_to_aggregate
-  print('################################ decay_steps: ', decay_steps)
 
   if FLAGS.learning_rate_decay_type == 'exponential':
     return tf.train.exponential_decay(FLAGS.learning_rate,
