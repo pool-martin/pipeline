@@ -126,7 +126,6 @@ def model_fn(features, labels, mode, params=None, config=None):
         probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
         logits = end_points['Logits']
         extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
-#        features = slim.flatten(end_points['Mixed_5c'], scope='Mixed_5cFlatten')
 
     if FLAGS.model_name == 'inception-v4':
         logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
@@ -140,6 +139,10 @@ def model_fn(features, labels, mode, params=None, config=None):
         global_step = tf.train.get_or_create_global_step()
         loss = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(features['label'], len(dataset_labels)), logits=logits)
         tf.summary.scalar('loss', loss)
+
+    # variables_to_restore = tf.contrib.slim.get_variables_to_restore(exclude=exclude_from_initial_checkpoint)
+    # tf.train.init_from_checkpoint('inception_resnet_v2_2016_08_30.ckpt', 
+    #                           {v.name.split(':')[0]: v for v in variables_to_restore})
 
     if mode == ModeKeys.PREDICT:
 #        features['snippet_id'] = tf.Print(features['snippet_id'].shape, [features['snippet_id']], 'snippet id shape')
@@ -191,9 +194,16 @@ def model_fn(features, labels, mode, params=None, config=None):
 def create_estimator(checkpoint_path=None):
     strategy = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-    sess_config = tf.ConfigProto()
+    sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
     sess_config.gpu_options.allow_growth = True
     #sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
+
+    # if FLAGS.num_gpus == 0:
+    #     distribution = tf.contrib.distribute.OneDeviceStrategy('device:CPU:0')
+    # elif FLAGS.num_gpus == 1:
+    #     distribution = tf.contrib.distribute.OneDeviceStrategy('device:GPU:0')
+    # else:
+    #     distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
     config = tf.estimator.RunConfig(train_distribute= strategy if FLAGS.distributed_run else None, 
                                     session_config=sess_config,
@@ -204,14 +214,27 @@ def create_estimator(checkpoint_path=None):
                                     save_summary_steps= (training_set_length / 100),
                                     log_step_count_steps = 100)
 
-
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'inception-v4']):
+
+        if FLAGS.model_name == 'i3d':
+            ws_checkpoint = FLAGS.i3d_ws_checkpoint
+            exclude_from_ws_checkpoint = []
+        elif FLAGS.model_name == 'inception-v4':
+            ws_checkpoint = FLAGS.inception_v4_ws_checkpoint
+            exclude_from_ws_checkpoint = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+
+    
+        ws = tf.estimator.WarmStartSettings(
+            ckpt_to_initialize_from=ws_checkpoint,
+            vars_to_warm_start= tf.contrib.slim.get_variables_to_restore(exclude=exclude_from_ws_checkpoint))
+
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
                                                 params=None,
-                                                model_dir=config.model_dir)
+                                                model_dir=config.model_dir,
+                                                warm_start_from=ws)
     else:
         raise ValueError('Unsupported network model')
 
@@ -220,8 +243,6 @@ def create_estimator(checkpoint_path=None):
 def main():
     if FLAGS.gpu_to_use:
         os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu_to_use
-    else:
-        del os.environ["CUDA_VISIBLE_DEVICES"]
 
     helpers.check_and_create_directories(FLAGS)
 
@@ -233,24 +254,24 @@ def main():
 
         # Getting validation and training sets
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-        training_set_length = int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size)
-        validation_set_length = int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size)
-        print('training set length', training_set_length)
-        print('validation set length', validation_set_length)
+        training_set_max_steps = int((FLAGS.epochs * len(network_training_set))/FLAGS.batch_size)
+        validation_set_max_steps = int((FLAGS.epochs * len(network_validation_set))/FLAGS.batch_size)
+        print('training set length: {}, max steps: {}'.format(len(network_training_set), training_set_max_steps))
+        print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
                                                     shuffle=True,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=FLAGS.epochs,
                                                     prefetch_buffer_size=FLAGS.batch_size * 3),
-                                                max_steps= int((FLAGS.epochs * training_set_length)/FLAGS.batch_size),
+                                                max_steps= training_set_max_steps,
                                                 hooks=[time_hist])
 
         eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=1),
-                                                steps=validation_set_length,
+                                                steps=validation_set_max_steps,
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
                                                 hooks=[time_hist])

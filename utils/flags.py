@@ -8,6 +8,10 @@ def define_flags():
     tf.app.flags.DEFINE_string(
         'checkpoint_path', '', 'path to load seed weigths.')
     tf.app.flags.DEFINE_string(
+        'inception_v4_ws_checkpoint', '/DL/initial_weigths/inception_v4.ckpt', 'warm start checkpoint to be used.')
+    tf.app.flags.DEFINE_string(
+        'i3d_ws_checkpoint', '/Exp/kinetics-i3d/data/checkpoints/rgb_imagenet/', 'warm start checkpoint to be used.')
+    tf.app.flags.DEFINE_string(
         'experiment_tag', 'initial_training', 'tag used in model dir places where we want to diferentiate subsequent executions.')
     tf.app.flags.DEFINE_string(
         'dataset_dir', '/DL/2kporn/', 'The sets to be used.')
