@@ -221,7 +221,7 @@ def main():
     if FLAGS.gpu_to_use:
         os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu_to_use
     else:
-        os.unsetenv["CUDA_VISIBLE_DEVICES"]
+        os.environ.pop["CUDA_VISIBLE_DEVICES"]
 
     helpers.check_and_create_directories(FLAGS)
 
