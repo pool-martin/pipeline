@@ -10,7 +10,7 @@ def define_flags():
     tf.app.flags.DEFINE_string(
         'ws_checkpoint_dir', '/DL/initial_weigths/', 'warm start checkpoint dir.')
     tf.app.flags.DEFINE_string(
-        'ws_checkpoint', 'rbg_imagenet', 'warm start checkpoint to be used.')
+        'ws_checkpoint', 'rgb_imagenet', 'warm start checkpoint to be used.')
     tf.app.flags.DEFINE_string(
         'experiment_tag', 'initial_training', 'tag used in model dir places where we want to diferentiate subsequent executions.')
     tf.app.flags.DEFINE_string(
