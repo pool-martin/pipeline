@@ -2,7 +2,7 @@ import os
 import time
 
 import tensorflow as tf
-from tensorflow.python.estimator.model_fn import EstimatorSpec, ModeKeys
+from tensorflow.python.estimator.model_fn import EstimatorSpec, ModeKeys #pylint: disable=E0611
 import tensorflow.contrib.slim as slim
 import tensorflow_hub as hub
 #tf.enable_eager_execution()
@@ -171,7 +171,10 @@ def model_fn(features, labels, mode, params=None, config=None):
     if mode == ModeKeys.TRAIN:
         learning_rate = helpers.configure_learning_rate(FLAGS, training_set_length, global_step)
         optimizer = helpers.configure_optimizer(FLAGS, learning_rate)
-        train_op = optimizer.minimize(loss=loss, global_step=global_step)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            train_op = optimizer.minimize(loss, global_step=global_step)
+
         accuracy = slim.metrics.accuracy(features['label'], predicted_indices)
         tf.summary.scalar('accuracy', accuracy)
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
@@ -195,7 +198,7 @@ def model_fn(features, labels, mode, params=None, config=None):
 
 def create_estimator(current_set_length):
     sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
-    sess_config.gpu_options.allow_growth = True
+    sess_config.gpu_options.allow_growth = True #pylint: disable=E1101
 
     if FLAGS.num_gpus == 0:
         distribution = tf.contrib.distribute.OneDeviceStrategy('device:CPU:0')
