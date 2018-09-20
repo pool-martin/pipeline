@@ -48,6 +48,7 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
         # numpy_frame = np.expand_dims(numpy_frame, axis=0)
         video_frames.append(numpy_frame.astype('float32'))
 
+    cap.release()
     results = np.stack(video_frames, axis=0)
     # print(len(results), results.shape)
     return results
