@@ -1,4 +1,4 @@
-import cv2, os
+import cv2, os, time
 import numpy as np
 import tensorflow as tf
 
@@ -17,6 +17,7 @@ def get_video_params(video_path):
 def get_video_frames(video_path, frames_identificator, snippet_path, image_size, split_type):
     video_frames = []
 
+    t1= time.time()
     video_path = video_path.decode("utf-8") 
 
     if(split_type.decode("utf-8") == '2D'):
@@ -50,6 +51,8 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
 
     cap.release()
     results = np.stack(video_frames, axis=0)
+    t2= time.time()
+    print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
     # print(len(results), results.shape)
     return results
 
