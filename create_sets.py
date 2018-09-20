@@ -67,17 +67,33 @@ def define_localization_label(labels, position):
             else:
                 return 0
 
-def define_snippet_bounds(labels, position, frame_position, fps, frame_count, bound_unit):
+def define_snippet_bounds(labels, position, frame_position, fps, frame_count, bound_unit, is_test_split, should_print):
 
     #the labels cames here sorted in reverse order.
     # so we can verify from the last of the video to the beggining if the possition \
     #fits a specific localization label in that piece of time.
 
     #We will verify the last label first and check if last portion of video is inside frame_count
-    if position >= labels[0][1][0] and frame_position <= frame_count:
+    if is_test_split:
+        should_print = False
+        snippet_begin = 0
+        snippet_end = int(min(frame_count -1, int(labels[0][1][0] + labels[0][1][1]) * fps))
+        if(should_print):
+            print('position', position, 'last_label_init', labels[0][1][0], 'last_label_end', labels[0][1][1], frame_position, frame_count)
+            print('ZZZZZZZZZZZZZZZ', snippet_begin, snippet_end )
+        return snippet_begin, snippet_end
+
+    if(should_print):
+        print('position', position, 'last_label_init', labels[0][1][0], 'last_label_end', labels[0][1][1], frame_position, frame_count)
+    if (position >= labels[0][1][0] and frame_position <= frame_count):
+        if(should_print):
+            print('11111111111111')
+
         if ('frame' in bound_unit):
             snippet_begin = int(math.floor(labels[0][1][0] * fps))
-            snippet_end = frame_count -1
+            snippet_end = int(min(frame_count -1, int(labels[0][1][0] + labels[0][1][1]) * fps))
+            if(should_print):
+                print('222222222222222', snippet_begin, snippet_end )
         return snippet_begin, snippet_end
 
     for label in labels:
@@ -87,16 +103,21 @@ def define_snippet_bounds(labels, position, frame_position, fps, frame_count, bo
             if ('frame' in bound_unit):
                 snippet_begin = int(math.floor(snippet_begin * fps))
                 snippet_end = int(math.floor(snippet_end * fps))
+                if(should_print):
+                    print('33333333333333', snippet_begin, snippet_end )
             return snippet_begin, snippet_end
+
+    raise ValueError('Error define_snippet_bounds for position {}'.format(position))
+
 
 def calc_desired_bounds(frame_position, fps, args):
     snippet_begin = frame_position
     snippet_end = int(math.floor(frame_position + (args.snippet_width * fps)))
     return snippet_begin, snippet_end
 
-def fit_bounds(max_init, max_end, desired_init, desired_end, args):
+def fit_bounds(min_init, max_end, desired_init, desired_end, args):
     end_bound = desired_end if desired_end <= max_end else max_end
-    init_bound = desired_init if desired_init >= max_init else max_init
+    init_bound = desired_init if desired_init >= min_init else min_init
 
     return init_bound, end_bound
 
@@ -109,7 +130,7 @@ def select_snippet_frames(init_bound, end_bound, fps, args):
         for frame in range(init_bound, end_bound, step):
             snippet.append(frame)
         #lets change a bit the frames if needed to loop again by summing 1 on init_bound if possible
-        init_bound = init_bound + 1 if init_bound < end_bound else init_bound
+        init_bound = init_bound + 1 if init_bound < end_bound -1 else init_bound
     return snippet[:args.snippet_length]
 
 #vPorn000235.mp4 1 296.858 4.0107 event - porn - f
@@ -130,30 +151,45 @@ def get_localization_labels(filename):
     #print "sorted_labels :%s" % sorted_labels
     return sorted_labels
 
-def is_snippet_length_too_low(init_bound, end_bound, fps, args):
+def is_snippet_length_too_short(init_bound, end_bound, fps, args):
     snippet_length = end_bound - init_bound
     desired_length = args.snippet_width * fps
+    # print('snippet_length, desired_length', snippet_length, desired_length)
     # snippets fewer than 0.5 * desired length will be discarded
-    if snippet_length >= 0.5 * desired_length:
-        return False
-    else:
+    if snippet_length <=0:
+        return True 
+        print('*', end='')
+    if snippet_length < 0.3 * desired_length:
+        print('!', end='')
         return True
+    if snippet_length < 0.3 * args.snippet_length:
+        print('@', end='')
+        return True
+    print('.', end='')
+    return False
 
-def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args):
+def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args, is_test_split):
 
-    # print(frame_entry, frame_count, fps, frame_position, position, labels)
-    max_init, max_end = define_snippet_bounds(labels, position, frame_position, fps, frame_count, 'frame')
-    # print('max', max_init, max_end)
+    should_print = False
+    if video_name in('vNonPorn000245'):
+        should_print = True
+        print(frame_entry, frame_count, fps, frame_position, position, labels)
+    min_init, max_end = define_snippet_bounds(labels, position, frame_position, fps, frame_count, 'frame', is_test_split, should_print)
+    if video_name in('vNonPorn000245'):
+        print('max', min_init, max_end)
     desired_init, desired_end = calc_desired_bounds(frame_position, fps, args)
-    # print('desired', desired_init, desired_end)
-    init_bound, end_bound = fit_bounds(max_init, max_end, desired_init, desired_end, args)
-    # print('fit', init_bound, end_bound)
+    if video_name in('vNonPorn000245'):
+        print('desired', desired_init, desired_end)
+    init_bound, end_bound = fit_bounds(min_init, max_end, desired_init, desired_end, args)
+    if video_name in('vNonPorn000245'):
+        print('fit', init_bound, end_bound)
 
     #If the length of snippet is to low we will not create it
-    if(is_snippet_length_too_low(init_bound, end_bound, fps, args)):
+    if(is_snippet_length_too_short(init_bound, end_bound, fps, args)):
         return False
-
+    #print('|', end='', flush=True)
     frames_snippet = select_snippet_frames(init_bound, end_bound, fps, args)
+    #print('$', end='', flush=True)
 
     snippet_folder = os.path.join(args.output_path, args.split_number, split_type, '{}_fps'.format(args.sample_rate), 'w_{}_l_{}'.format(args.snippet_width, args.snippet_length), video_name)
     if not os.path.exists(snippet_folder):
@@ -165,7 +201,8 @@ def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_f
                 f.write("%s\n" % item)
     return True
 
-def select_video_frames(video_name, split_type, args):
+def select_video_frames(video_name, split_type, args, split_test):
+    print('\n', video_name, ' ', end='')
     frames = []
     etf_file = os.path.join(args.dataset_dir, 'etf', video_name + '.etf')
     frame_count, fps, _, _ = opencv.get_video_params(os.path.join(args.dataset_dir, 'videos', video_name + '.mp4'))
@@ -174,9 +211,9 @@ def select_video_frames(video_name, split_type, args):
     labels = get_localization_labels(etf_file)
     etf_duration = (labels[0][1][0] + labels[0][1][1]) * 1000 
 
-    duration_difference = calc_duration - etf_duration
-    if abs(duration_difference) > 1000 and 'vPorn' in video_name: # > 2000 == 2 seconds
-        print(video_name, '{0:0.2f} {1}'.format(abs(duration_difference), '+' if duration_difference > 0 else '-'))
+    # duration_difference = calc_duration - etf_duration
+    # if abs(duration_difference) > 1000 and 'vPorn' in video_name: # > 2000 == 2 seconds
+    #     print(video_name, '{0:0.2f} {1}'.format(abs(duration_difference), '+' if duration_difference > 0 else '-'))
 
     for frame_position in range (0, frame_count, int(math.floor(fps * args.sample_rate)) ):
         position = float(frame_position) / float(fps)
@@ -184,18 +221,20 @@ def select_video_frames(video_name, split_type, args):
         frame_entry = "{}_{}_{}".format(video_name, localization_label, frame_position)
         #for 3D case, we will append the frames only if the snippet is really generated
         if ('3D' in split_type):
-            if(generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args)):
+            #print('.', end='', flush=True)
+            if(generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args, split_test)):
                 frames.append(frame_entry)
         else:
             frames.append(frame_entry)
 
     return frames
 
-def create_video_split(name_set, split_type, positive_set, negative_set, args):
+def create_video_split(name_set, split_type, positive_set, negative_set, args, split_test=False):
     split = []
     all_set = positive_set + negative_set
     for video in all_set:
-        split.extend(select_video_frames(video.strip(), split_type, args))
+        split.extend(select_video_frames(video.strip(), split_type, args,split_test))
+
 
     split_path = os.path.join(args.output_path, args.split_number, split_type, '{}_fps'.format(args.sample_rate), name_set + '.txt')
     with open(split_path, "w") as f:
@@ -273,23 +312,26 @@ def create_splits(args):
 
     full_dir_path = os.path.join(args.output_path, args.split_number, '3D', '{}_fps'.format(args.sample_rate), 'w_{}_l_{}'.format(args.snippet_width, args.snippet_length))
     command = "mkdir -p " + full_dir_path
-    print(command)
+    print('\n', command)
     call(command, shell=True)
 
     create_video_split('network_training_set', '3D', positive_network_training_set, negative_network_training_set, args)
     create_video_split('network_validation_set', '3D', positive_network_validation_set, negative_network_validation_set, args)
     create_video_split('svm_training_set', '3D', positive_svm_training_set, negative_svm_training_set, args)
     create_video_split('svm_validation_set', '3D', positive_svm_validation_set, negative_svm_validation_set, args)
-    create_video_split('test_set', '3D', positive_test_set, negative_test_set, args)
+
+    print('################################ TEST SET ####################################')
+
+    create_video_split('test_set', '3D', positive_test_set, negative_test_set, args, split_test=True)
     
     sets_3d_path = os.path.join(args.output_path, args.split_number, '3D', '{}_fps'.format(args.sample_rate))
 
     sets_2d_path = os.path.join(args.output_path, args.split_number, '2D', '{}_fps'.format(args.sample_rate))
     command = "mkdir -p " + sets_2d_path
-    print(command)
+    print('\n', command)
     call(command, shell=True)
     command = 'cp {}/*.txt {}'.format(sets_3d_path, sets_2d_path)
-    print(command)
+    print('\n', command)
     call(command, shell=True)
 
 def main():

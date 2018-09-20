@@ -6,7 +6,7 @@ def get_video_params(video_path):
     # print('.', end='', flush=True)
     cap = cv2.VideoCapture(video_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    fps =  int(cap.get(cv2.CAP_PROP_FPS))
+    fps =  float(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
@@ -32,14 +32,17 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
     cap = cv2.VideoCapture(video_path)
     if (cap.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path))
 
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
     for frame_no in frame_numbers:
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
         ret, frame = cap.read()
         if (ret == False): raise ValueError('Error extracting video {} frame {}'.format(video_path, frame_no))
 
         # unfortunately opencv uses bgr color format as default
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = cv2.resize(frame, tuple(image_size), interpolation=cv2.INTER_CUBIC)
+       frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+       frame = cv2.resize(frame, tuple(image_size), interpolation=cv2.INTER_CUBIC)
 
         # adhere to TS graph input structure
         numpy_frame = np.asarray(frame)
