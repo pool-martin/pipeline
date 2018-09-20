@@ -53,9 +53,9 @@ def get_splits(FLAGS):
     network_training_set = []
     network_validation_set = []
 
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set.txt'), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_training_set = f.read().split('\n')[:-1]
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set.txt'), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_validation_set = f.read().split('\n')[:-1]
 
     return network_training_set, network_validation_set
@@ -65,11 +65,11 @@ def get_sets_to_extract(FLAGS):
     svm_validation_set = []
     test_set = []
 
-    with open(os.path.join(assembly_sets_path(FLAGS), 'svm_training_set.txt'), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS), 'svm_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         svm_training_set = f.read().split('\n')[:-1]
-    with open(os.path.join(assembly_sets_path(FLAGS), 'svm_validation_set.txt'), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS), 'svm_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         svm_validation_set = f.read().split('\n')[:-1]
-    with open(os.path.join(assembly_sets_path(FLAGS), 'test_set.txt'), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         test_set = f.read().split('\n')[:-1]
 
     return { 'svm_training_set': svm_training_set,

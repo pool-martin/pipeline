@@ -17,6 +17,9 @@ def define_flags():
         'dataset_dir', '/DL/2kporn/', 'The sets to be used.')
     tf.app.flags.DEFINE_string(
         'sets_dir', '/Exp/2kporn/splits', 'The sets to be used.')
+    tf.app.flags.DEFINE_bool(
+        'mini_sets', False, 'use mini sets (to debug).')
+    
     tf.app.flags.DEFINE_string(
         'snippets_dir', '', 'The sets to be used.')
     tf.app.flags.DEFINE_boolean(
@@ -136,8 +139,16 @@ def define_flags():
     'output_format', 'pickle', 'Format of the output: text or pickle.')
 
     tf.app.flags.DEFINE_bool(
-        'predict_and_extract', False,
-        'Predict and extract features to output_file.')
+        'train', True,
+        'Should train.')
+
+    tf.app.flags.DEFINE_bool(
+        'eval', True,
+        'Should evaluate.')
+
+    tf.app.flags.DEFINE_bool(
+        'predict', True,
+        'Should predict and extract features to output_file.')
 
     tf.app.flags.DEFINE_bool(
         'predict_from_initial_weigths', False,

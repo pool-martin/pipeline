@@ -9,7 +9,7 @@ import tensorflow_hub as hub
 
 import numpy as np
 
-from nets import i3d, inception_v4
+from nets import i3d, inception_v4, c3d
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
@@ -36,7 +36,7 @@ def input_fn(videos_in_split,
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
 
-    image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict_and_extract)
+    image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
 
     def _map_func(frame_identificator):
         frame_info = tf.string_split([frame_identificator], delimiter='_')
@@ -140,6 +140,13 @@ def model_fn(features, labels, mode, params=None, config=None):
         scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
         pattern_to_exclude = ['biases', "global_step"]
 
+    if FLAGS.model_name == 'c3d':
+        logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
+        probabilities = end_points['Predictions']
+        extracted_features = end_points['PreLogitsFlatten']
+        scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+        pattern_to_exclude = ['biases', "global_step"]
+
     if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
         #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
         ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
@@ -183,14 +190,14 @@ def model_fn(features, labels, mode, params=None, config=None):
         eval_metric_ops = {
             'accuracy': tf.metrics.accuracy(features['label'], predicted_indices),
             'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
-            'auroc': tf.metrics.auc(tf.one_hot(features['label'], len(dataset_labels)), logits),
+            'auc': tf.metrics.auc(features['label'], predicted_indices),
             "mse": tf.metrics.mean_squared_error(features['label'], predicted_indices),
             'precision': tf.metrics.precision(features['label'], predicted_indices),
             'recall': tf.metrics.recall(features['label'], predicted_indices)
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
         tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['accuracy'])
-        tf.summary.scalar('auroc', eval_metric_ops['auroc'])
+        tf.summary.scalar('auc', eval_metric_ops['auc'])
         tf.summary.scalar('mse', eval_metric_ops['mse'])
         tf.summary.scalar('precision', eval_metric_ops['precision'])
         tf.summary.scalar('recall', eval_metric_ops['recall'])
@@ -239,16 +246,16 @@ def main():
     time_hist = TimeHistory()
     tf.train.get_or_create_global_step()
 
-    if not FLAGS.predict_and_extract:
-
+    if FLAGS.train and FLAGS.eval:
         # Getting validation and training sets
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
         global training_set_length
         training_set_length = len(network_training_set)
-        validation_set_length = len(network_validation_set)
         training_set_max_steps = int((FLAGS.epochs * training_set_length)/FLAGS.batch_size)
-        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
         print('training set length: {}, max steps: {}'.format(len(network_training_set), training_set_max_steps))
+
+        validation_set_length = len(network_validation_set)
+        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         estimator = create_estimator(training_set_length)
@@ -269,8 +276,24 @@ def main():
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
                                                 hooks=[time_hist])
+
         tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-    else:
+
+    if not FLAGS.train and FLAGS.eval:
+        network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+        validation_set_length = len(network_validation_set)
+        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
+        print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+
+        estimator = create_estimator(training_set_length)
+        estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
+                                                    shuffle=False,
+                                                    batch_size=FLAGS.batch_size,
+                                                    num_epochs=1),
+                                                    steps=validation_set_max_steps,
+                                                    hooks=[time_hist])
+
+    if FLAGS.predict:
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
 
         for set_name, set_to_extract in sets_to_extract.items():
