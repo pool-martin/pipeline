@@ -99,7 +99,8 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
         # ret, frame = cap.read()
         if (ret == False): 
             fvs.stop()
-            raise ValueError('Error extracting video {} frame {}'.format(video_path, frame_no))
+            print('Error extracting video {} id {} frame {}'.format(video_path, frames_identificator, frame_no))
+            break
 
         # unfortunately opencv uses bgr color format as default
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -115,6 +116,11 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
 
     # cap.release()
     fvs.stop()
+    #temporary recovery to not break the pipeline
+    if(len(video_frames) > 0 and len(video_frames) < len(frame_numbers)):
+        while len(video_frames) < len(frame_numbers):
+            video_frames.append(video_frames[0])
+
     results = np.stack(video_frames, axis=0)
     # t2= time.time()
     # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
