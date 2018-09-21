@@ -19,7 +19,7 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /home/${USER}/Exp
+        source: /work/${USER}/Exp
         target: /Exp
       - type: bind
         source: /work/${USER}/DL
