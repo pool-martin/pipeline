@@ -1,6 +1,8 @@
-import cv2, os, time
+import cv2, os, time, sys
+from threading import Thread
 import numpy as np
 import tensorflow as tf
+from queue import Queue
 
 def get_video_params(video_path):
     # print('.', end='', flush=True)
@@ -13,6 +15,59 @@ def get_video_params(video_path):
 
     return frame_count, fps, height, width
 
+class FileVideoStream:
+    def __init__(self, path, queueSize=128, frames_to_extract=None):
+        # initialize the file video stream along with the boolean
+        # used to indicate if the thread should be stopped or not
+        self.stream = cv2.VideoCapture(path)
+        self.stopped = False
+        self.frames_to_extract = frames_to_extract
+
+        # initialize the queue used to store frames read from
+        # the video file
+        maxsize = queueSize if frames_to_extract == None else len(frames_to_extract)
+        self.Q = Queue(maxsize=maxsize)
+    def start(self):
+        # start a thread to read frames from the file video stream
+        t = Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
+        return self
+    def update(self):
+        # keep looping infinitely
+        for frame_no in self.frames_to_extract:
+            # if the thread indicator variable is set, stop the thread
+            if self.stopped:
+                return
+
+            # read the next frame from the file
+            self.stream.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
+            (grabbed, frame) = self.stream.read()
+
+            # if the `grabbed` boolean is `False`, then we have
+            # reached the end of the video file
+            # if not grabbed:
+            #     self.stop()
+            #     return
+
+            # add the frame to the queue
+            self.Q.put([grabbed, frame])
+        self.stop()
+        return
+
+
+    def isOpened(self):
+        # check if the video was opened with success
+        return self.stream.isOpened()
+    def read(self):
+        # return next frame in the queue
+        return self.Q.get()
+    def more(self):
+        # return True if there are still frames in the queue
+        return self.Q.qsize() > 0
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
 
 def get_video_frames(video_path, frames_identificator, snippet_path, image_size, split_type):
     video_frames = []
@@ -28,21 +83,27 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
         # print(video_path)
         # print( frame_numbers )
         frame_numbers = [float(number) for number in frame_numbers]
+    
+    fvs = FileVideoStream(video_path, frames_to_extract=frame_numbers).start()
 
-    cap = cv2.VideoCapture(video_path)
-    if (cap.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path))
+#    cap = cv2.VideoCapture(video_path)
+    if (fvs.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path))
 
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    # height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     for frame_no in frame_numbers:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
-        ret, frame = cap.read()
-        if (ret == False): raise ValueError('Error extracting video {} frame {}'.format(video_path, frame_no))
+
+        ret, frame = fvs.read()
+        # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
+        # ret, frame = cap.read()
+        if (ret == False): 
+            fvs.stop()
+            raise ValueError('Error extracting video {} frame {}'.format(video_path, frame_no))
 
         # unfortunately opencv uses bgr color format as default
-       frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-       frame = cv2.resize(frame, tuple(image_size), interpolation=cv2.INTER_CUBIC)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, tuple(image_size), interpolation=cv2.INTER_CUBIC)
 
         # adhere to TS graph input structure
         numpy_frame = np.asarray(frame)
@@ -52,11 +113,11 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
         # numpy_frame = np.expand_dims(numpy_frame, axis=0)
         video_frames.append(numpy_frame.astype('float32'))
 
-    cap.release()
+    # cap.release()
+    fvs.stop()
     results = np.stack(video_frames, axis=0)
     t2= time.time()
     print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
-    # print(len(results), results.shape)
     return results
 
 
