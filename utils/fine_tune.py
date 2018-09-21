@@ -31,7 +31,7 @@ def init_weights(scopes_to_exclude, patterns_to_exclude, path):
 def get_scope_and_patterns_to_exclude(model_name):
     if model_name == 'inception_v4':
         scopes_to_exclude = ["RGB/inception_i3d/Logits"]
-        pattern_to_exclude = []
+        pattern_to_exclude = ["global_step"]
     elif model_name == 'i3d':
         scopes_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
         pattern_to_exclude = ['biases', "global_step"]
