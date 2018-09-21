@@ -22,7 +22,7 @@ services:
         source: /home/${USER}/Exp
         target: /Exp
       - type: bind
-        source: /home/${USER}/DL
+        source: /work/${USER}/DL
         target: /DL
         read_only: true
       - type: bind
