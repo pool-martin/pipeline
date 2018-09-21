@@ -31,11 +31,11 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'num_gpus', 1, 'The number of gpus that should be used')
     tf.app.flags.DEFINE_integer(
-        'sample_rate', 5, 'sample rate of the dataset in fps')
+        'sample_rate', 1, 'sample rate of the dataset in fps')
     tf.app.flags.DEFINE_integer(
         'snippet_size', 32, 'The number of frames in the snippet')
     tf.app.flags.DEFINE_integer(
-        'snippet_width', 5, 'The length in seconds the snippet should represent')
+        'snippet_width', 4, 'The length in seconds the snippet should represent')
     tf.app.flags.DEFINE_integer(
         'batch_size', 8, 'The number of snippets in the batch')
     tf.app.flags.DEFINE_integer(
