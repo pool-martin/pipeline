@@ -170,4 +170,10 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'image_channels', 3, 'channels of the entry images.')
 
+    if(tf.app.flags.FLAGS.model_name in ['i3d']):
+        tf.app.flags.FLAGS.split_type = '3D'
+    elif(tf.app.flags.FLAGS.model_name in ['inception_v4']):
+        tf.app.flags.FLAGS.split_type = '2D'
+
+
     return tf.app.flags.FLAGS
