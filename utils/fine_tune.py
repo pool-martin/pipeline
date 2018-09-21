@@ -27,3 +27,19 @@ def init_weights(scopes_to_exclude, patterns_to_exclude, path):
     def InitFn(scaffold,sess):
         initializer_fn(sess)
     return InitFn
+
+def get_scope_and_patterns_to_exclude(model_name):
+    if model_name == 'inception_v4':
+        scopes_to_exclude = ["RGB/inception_i3d/Logits"]
+        pattern_to_exclude = []
+    elif model_name == 'i3d':
+        scopes_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+        pattern_to_exclude = ['biases', "global_step"]
+    return scopes_to_exclude, pattern_to_exclude
+
+def get_variables_to_restore(model_name):
+    scopes_to_exclude, patterns_to_exclude = get_scope_and_patterns_to_exclude(model_name)
+    variables_to_restore = slim.get_variables_to_restore(exclude=scopes_to_exclude)
+    for pattern in patterns_to_exclude:
+        variables_to_restore = [v for v in variables_to_restore if pattern not in v.name ]
+    return variables_to_restore

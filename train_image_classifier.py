@@ -147,10 +147,10 @@ def model_fn(features, labels, mode, params=None, config=None):
         scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
         pattern_to_exclude = ['biases', "global_step"]
 
-    if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
-        #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
-        ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
+    # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
+    #     #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
+    #     ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
+    #     scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
 
     predicted_indices = tf.argmax(logits, axis=-1)
 
@@ -214,7 +214,7 @@ def create_estimator(current_set_length):
     else:
         distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=FLAGS.num_gpus)
 
-    config = tf.estimator.RunConfig(train_distribute=distribution if not helpers.is_first_run(FLAGS) else None, 
+    config = tf.estimator.RunConfig(train_distribute=distribution, 
                                     session_config=sess_config,
                                     model_dir=helpers.define_model_dir(FLAGS),
                                     tf_random_seed=1,
@@ -227,11 +227,14 @@ def create_estimator(current_set_length):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'inception_v4']):
 
+        ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
+                                            fine_tune.get_variables_to_restore(FLAGS.model_name))
+
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
                                                 params=None,
                                                 model_dir=config.model_dir,
-                                                warm_start_from=None)
+                                                warm_start_from=ws)
     else:
         raise ValueError('Unsupported network model')
 
