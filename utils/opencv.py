@@ -72,7 +72,7 @@ class FileVideoStream:
 def get_video_frames(video_path, frames_identificator, snippet_path, image_size, split_type):
     video_frames = []
 
-    t1= time.time()
+    # t1= time.time()
     video_path = video_path.decode("utf-8") 
 
     if(split_type.decode("utf-8") == '2D'):
@@ -116,8 +116,8 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
     # cap.release()
     fvs.stop()
     results = np.stack(video_frames, axis=0)
-    t2= time.time()
-    print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
+    # t2= time.time()
+    # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
     return results
 
 
