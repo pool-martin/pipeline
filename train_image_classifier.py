@@ -257,8 +257,8 @@ def main():
         training_set_length = len(network_training_set)
         steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
-        print('training set length: {}, epochs: {}, num_gpus: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
-              FLAGS.epochs, FLAGS.num_gpus, steps_per_epoch, training_set_max_steps))
+        print('training set length: {}, epochs: {}, num_gpus: {}, batch_size: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
+              FLAGS.epochs, FLAGS.num_gpus, FLAGS.batch_size, steps_per_epoch, training_set_max_steps))
 
         validation_set_length = len(network_validation_set)
         validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
