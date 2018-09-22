@@ -255,11 +255,13 @@ def main():
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
         global training_set_length
         training_set_length = len(network_training_set)
-        training_set_max_steps = int((FLAGS.epochs * training_set_length)/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
-        print('training set length: {}, max steps: {}'.format(len(network_training_set), training_set_max_steps))
+        steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+        training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
+        print('training set length: {}, epochs: {}, num_gpus: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
+              FLAGS.epochs, FLAGS.num_gpus, steps_per_epoch, training_set_max_steps))
 
         validation_set_length = len(network_validation_set)
-        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+        validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         estimator = create_estimator(training_set_length)
