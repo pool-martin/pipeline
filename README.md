@@ -25,13 +25,13 @@ Step 2 - Create sets (network_training, network_validation, svm_training, svm_va
     # sample-rate unit = fps
     # sample-length unit = number frames
     # sample-width unit = seconds
-    python create_sets.py --split-number s1 --sample-rate 5 --snippet-length 32 --snippet-width 5
+    python create_sets.py --split-number s1 --sample-rate 1 --snippet-length 32 --snippet-width 4
 
 Step 3 - Extract features from imagenet/initial weigths
-    python train_image_classifier.py --model_name inception_v4 --split_type 2D --gpu_to_use 0,1 --batch_size 56 --train=0 --eval=0 --predict_from_initial_weigths
+    python train_image_classifier.py --model_name i3d --gpu_to_use 0,1 --num_gpus 2 --batch_size 2 --train=0 --eval=0 --predict=1
 
 Step 3 - Train and extract features
-    python train_image_classifier.py --model_name inception_v4 --split_type 2D --gpu_to_use 1 --batch_size 56 --num_gpus 1 --epochs 26
+    python train_image_classifier.py --model_name inception_v4 --gpu_to_use 0,1 --batch_size 56 --num_gpus 2 --epochs 26
 
 ######################################
 SVM

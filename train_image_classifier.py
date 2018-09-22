@@ -219,8 +219,9 @@ def create_estimator(current_set_length):
                                     model_dir=helpers.define_model_dir(FLAGS),
                                     tf_random_seed=1,
                                     save_checkpoints_steps=int(current_set_length / 2 ),
+                                    keep_checkpoint_every_n_hours=2,
                                     keep_checkpoint_max=32,
-                                    save_summary_steps= (current_set_length / 100),
+                                    save_summary_steps= int(max((current_set_length / 200), 500)),
                                     log_step_count_steps = 100)
 
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
@@ -254,11 +255,11 @@ def main():
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
         global training_set_length
         training_set_length = len(network_training_set)
-        training_set_max_steps = int((FLAGS.epochs * training_set_length)/FLAGS.batch_size)
+        training_set_max_steps = int((FLAGS.epochs * training_set_length)/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         print('training set length: {}, max steps: {}'.format(len(network_training_set), training_set_max_steps))
 
         validation_set_length = len(network_validation_set)
-        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
+        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         estimator = create_estimator(training_set_length)
@@ -285,13 +286,13 @@ def main():
     if not FLAGS.train and FLAGS.eval:
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
         validation_set_length = len(network_validation_set)
-        validation_set_max_steps = int((FLAGS.epochs * validation_set_length)/FLAGS.batch_size)
+        validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         estimator = create_estimator(training_set_length)
         estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
-                                                    batch_size=FLAGS.batch_size,
+                                                    batch_size=int(FLAGS.batch_size),
                                                     num_epochs=1),
                                                     steps=validation_set_max_steps,
                                                     hooks=[time_hist])

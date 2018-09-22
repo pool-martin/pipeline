@@ -140,9 +140,7 @@ def configure_learning_rate(FLAGS, num_samples_per_epoch, global_step):
   Raises:
     ValueError: if
   """
-  decay_steps = int((num_samples_per_epoch / FLAGS.batch_size) * FLAGS.num_epochs_per_decay)
-#   if FLAGS.sync_replicas:
-#     decay_steps /= FLAGS.replicas_to_aggregate
+  decay_steps = int((num_samples_per_epoch / (FLAGS.batch_size * max(1, FLAGS.num_gpus))) * FLAGS.num_epochs_per_decay)
 
   if FLAGS.learning_rate_decay_type == 'exponential':
     return tf.train.exponential_decay(FLAGS.learning_rate,
