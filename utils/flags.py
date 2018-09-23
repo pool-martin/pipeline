@@ -41,7 +41,7 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'epochs', 25, 'The number of epochs to run the training')
     tf.app.flags.DEFINE_integer(
-        'eval_interval_secs', 3* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
+        'eval_interval_secs', 1* 3600, 'Do not re-evaluate unless the last evaluation was started at least this many seconds ago.')
     tf.app.flags.DEFINE_string(
         'gpu_to_use', '', 'gpus to use')
 
