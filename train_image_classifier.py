@@ -52,7 +52,7 @@ def input_fn(videos_in_split,
 
         snippet.set_shape([snippet_size] + list(image_size) + [3])
 
-        snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, image_size[0], image_size[1],
+        snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape[0], FLAGS.image_shape[1],
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
         snippet = tf.squeeze(snippet)
         
