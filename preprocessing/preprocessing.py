@@ -169,11 +169,8 @@ def apply_image_normalization(image, normalize_per_image=0) :
     else :
       raise ValueError('invalid value for normalize_per_image: %d' % normalize_per_image)
 
-
 def preprocess_for_train(image, height, width, bbox,
                          fast_mode=True,
-                         aspect_ratio_range=(0.75, 1.33),
-                         area_range=(0.05, 1.0),
                          add_rotations=False,
                          normalize_per_image=0,
                          scope=None):
@@ -215,8 +212,7 @@ def preprocess_for_train(image, height, width, bbox,
                                                   bbox)
     tf.summary.image('image_with_bounding_boxes', image_with_box)
 
-    distorted_image, distorted_bbox = distorted_bounding_box_crop(image, bbox,
-    aspect_ratio_range=aspect_ratio_range, area_range=area_range)
+    distorted_image, distorted_bbox = distorted_bounding_box_crop(image, bbox)
     # Restore the shape since the dynamic slice based upon the bbox_size loses
     # the third dimension.
     distorted_image.set_shape([None, None, 3])
@@ -249,8 +245,8 @@ def preprocess_for_train(image, height, width, bbox,
         lambda x, ordering: distort_color(x, ordering, fast_mode),
         num_cases=4)
 
-    tf.summary.image('final_distorted_image', tf.expand_dims(distorted_image, 0))
-
+    tf.summary.image('final_distorted_image',
+                     tf.expand_dims(distorted_image, 0))
     distorted_image = apply_image_normalization(distorted_image, normalize_per_image)
     return distorted_image
 
@@ -293,7 +289,7 @@ def preprocess_for_eval(image, height, width,
       image = tf.image.resize_bilinear(image, [height, width],
                                        align_corners=False)
       image = tf.squeeze(image, [0])
-      image = apply_image_normalization(image, normalize_per_image)
+    image = apply_image_normalization(image, normalize_per_image)
     return image
 
 
@@ -301,8 +297,6 @@ def preprocess_image(image, height, width,
                      is_training=False,
                      bbox=None,
                      fast_mode=True,
-                     aspect_ratio_range=(0.75, 1.33),
-                     area_range=(0.05, 1.0),
                      add_rotations=False,
                      normalize_per_image=0):
   """Pre-process one image for training or evaluation.
@@ -325,12 +319,9 @@ def preprocess_image(image, height, width,
     ValueError: if user does not provide bounding box
   """
   if is_training:
-    return preprocess_for_train(image, height, width, bbox,
-        fast_mode=fast_mode,
-        aspect_ratio_range=aspect_ratio_range, 
-        area_range=area_range, 
+    return preprocess_for_train(image, height, width, bbox, fast_mode, 
         add_rotations=add_rotations,
         normalize_per_image=normalize_per_image)
   else:
     return preprocess_for_eval(image, height, width,
-    normalize_per_image=normalize_per_image)
+        normalize_per_image=normalize_per_image)
