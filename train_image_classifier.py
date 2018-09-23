@@ -27,7 +27,7 @@ dataset_labels = ['0', '1'] #We are extracting labels from filenames and there i
 training_set_length = 0
 
 def input_fn(videos_in_split,
-             image_size=tuple(FLAGS.image_shape,FLAGS.image_shape),
+             image_size=tuple([FLAGS.image_shape,FLAGS.image_shape]),
              shuffle=False,
              batch_size=64, 
              num_epochs=None, 
@@ -79,17 +79,17 @@ def input_fn(videos_in_split,
 def keras_model():
 
     # if FLAGS.model_name == 'i3d-keras':
-    #     base_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple(FLAGS.image_shape) + (FLAGS.image_channels,)), include_top=False)
+    #     base_model = keras_i3d.Inception_Inflated3d(input_shape=((FLAGS.snippet_size,) + tuple([FLAGS.image_shape, FLAGS.image_shape]) + (FLAGS.image_channels,)), include_top=False)
     # elif FLAGS.model_name == 'inception-v4':
     #     base_model = keras_inception_v4.create_model(num_classes=2, include_top=False)
     if FLAGS.model_name == 'mobilenet-3d':
         raise ValueError('Unsupported deep network model')
     elif FLAGS.model_name == 'mobilenet':
-        base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape, FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
+        base_model = tf.keras.applications.MobileNet(input_shape=tuple([FLAGS.image_shape, FLAGS.image_shape]) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
     elif FLAGS.model_name == 'inception-v3':
         base_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
     elif FLAGS.model_name == 'VGG16':
-        base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape, FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
+        base_model = tf.keras.applications.VGG16(input_shape=tuple([FLAGS.image_shape, FLAGS.image_shape]) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
     else:
         raise ValueError('Unsupported deep network model')
 
