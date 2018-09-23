@@ -27,7 +27,7 @@ dataset_labels = ['0', '1'] #We are extracting labels from filenames and there i
 training_set_length = 0
 
 def input_fn(videos_in_split,
-             image_size=tuple(FLAGS.image_shape),
+             image_size=tuple(FLAGS.image_shape,FLAGS.image_shape),
              shuffle=False,
              batch_size=64, 
              num_epochs=None, 
@@ -52,7 +52,7 @@ def input_fn(videos_in_split,
 
         snippet.set_shape([snippet_size] + list(image_size) + [3])
 
-        snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape[0], FLAGS.image_shape[1],
+        snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
         snippet = tf.squeeze(snippet)
         
@@ -85,11 +85,11 @@ def keras_model():
     if FLAGS.model_name == 'mobilenet-3d':
         raise ValueError('Unsupported deep network model')
     elif FLAGS.model_name == 'mobilenet':
-        base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
+        base_model = tf.keras.applications.MobileNet(input_shape=tuple(FLAGS.image_shape, FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
     elif FLAGS.model_name == 'inception-v3':
         base_model = tf.keras.applications.inception_v3.InceptionV3(weights=None)
     elif FLAGS.model_name == 'VGG16':
-        base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
+        base_model = tf.keras.applications.VGG16(input_shape=tuple(FLAGS.image_shape, FLAGS.image_shape) + (FLAGS.image_channels,), include_top=False, classes=len(dataset_labels))
     else:
         raise ValueError('Unsupported deep network model')
 

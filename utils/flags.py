@@ -165,8 +165,8 @@ def define_flags():
 
     tf.app.flags.DEFINE_integer(
         'normalize_per_image', 1, 'Normalization per image: 0 (None), 1 (Mean), 2 (Mean and Stddev)')
-    tf.app.flags.DEFINE_list(
-        'image_shape', [224, 224], 'The dimensions to use as entry for the images.')
+    tf.app.flags.DEFINE_integer(
+        'image_shape', 224, 'The dimensions to use as entry for the images.')
     tf.app.flags.DEFINE_integer(
         'image_channels', 3, 'channels of the entry images.')
 
