@@ -9,7 +9,7 @@ import tensorflow_hub as hub
 
 import numpy as np
 
-from nets import i3d, inception_v4, c3d
+from nets import i3d, i3d_v4, c3d, inception_v1, inception_v4
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
@@ -125,23 +125,35 @@ def model_fn(features, labels, mode, params=None, config=None):
 
     if FLAGS.model_name == 'i3d':
         with tf.variable_scope('RGB'):
-            dnn_model = i3d.InceptionI3d(num_classes=2, spatial_squeeze=True)
+            dnn_model = i3d.InceptionI3d(num_classes=len(dataset_labels), spatial_squeeze=True)
             probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
             logits = end_points['Logits']
             extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
         scope_to_exclude = ["RGB/inception_i3d/Logits"]
         pattern_to_exclude = []
 
-
-    if FLAGS.model_name == 'inception_v4':
-        logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
+    if FLAGS.model_name == 'i3d_v4':
+        dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels))
+        logits, end_points = dnn_model(features['snippet'], is_training=is_training)
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
-        scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-        pattern_to_exclude = ['biases', "global_step"]
+        # scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+        # pattern_to_exclude = ['biases', "global_step"]
 
     if FLAGS.model_name == 'c3d':
-        logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=2)
+        logits, end_points = c3d.C3D(input=features['snippet'], num_classes=len(dataset_labels))
+        probabilities = tf.nn.softmax(logits)
+        extracted_features = tf.layers.Flatten()(end_points['max_pool5'])
+
+    if FLAGS.model_name == 'inception_v1':
+        logits, end_points = inception_v1.inception_v1(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
+        probabilities = end_points['Predictions']
+        extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+        scope_to_exclude = ["InceptionV1/Logits"]
+        #pattern_to_exclude = ['biases', "global_step"]
+
+    if FLAGS.model_name == 'inception_v4':
+        logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
         scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
@@ -226,8 +238,9 @@ def create_estimator(steps_per_epoch):
 
     if(FLAGS.model_name in ['mobilenet', 'VGG16', 'inception-v3', 'i3d-keras']):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
-    elif(FLAGS.model_name in ['i3d', 'inception_v4']):
+    elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4']):
 
+        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']
         ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
                                             fine_tune.get_variables_to_restore(FLAGS.model_name))
 

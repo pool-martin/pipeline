@@ -31,7 +31,7 @@ Step 3 - Extract features from imagenet/initial weigths
     python train_image_classifier.py --model_name i3d --gpu_to_use 0,1 --num_gpus 2 --batch_size 2 --train=0 --eval=0 --predict=1
 
 Step 3 - Train and extract features
-    python train_image_classifier.py --model_name inception_v4 --gpu_to_use 0,1 --batch_size 56 --num_gpus 2 --epochs 26 teste_JP
+    python train_image_classifier.py --model_name inception_v4 --gpu_to_use 0,1 --batch_size 56 --num_gpus 2 --epochs 26
 
 ######################################
 SVM
