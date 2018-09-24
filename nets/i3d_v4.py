@@ -21,7 +21,7 @@ class Unit3D(snt.AbstractModule):
                use_batch_norm=True,
                use_bias=False,
                name='unit_3d', 
-               reuse=reuse,
+               reuse=None,
                padding=snt.SAME,
                tf_library='sonnet'):
     """Initializes Unit3D module."""
@@ -70,21 +70,21 @@ class Unit3D(snt.AbstractModule):
     return net
 
 class InceptionI3d_v4(snt.AbstractModule):
-  """Inception-v1 I3D architecture.
+    """Inception-v1 I3D architecture.
 
-  The model is introduced in:
+    The model is introduced in:
 
     Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset
     Joao Carreira, Andrew Zisserman
     https://arxiv.org/pdf/1705.07750v1.pdf.
 
-  See also the Inception architecture, introduced in:
+      See also the Inception architecture, introduced in:
 
     Going deeper with convolutions
     Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed,
     Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich.
     http://arxiv.org/pdf/1409.4842v1.pdf.
-  """
+    """
 
     # Endpoints of the model in order. During construction, all the endpoints up
     # to a designated `final_endpoint` are returned in a dictionary as the
@@ -145,11 +145,10 @@ class InceptionI3d_v4(snt.AbstractModule):
 
         super(InceptionI3d_v4, self).__init__(name=name)
         self._num_classes = num_classes
-        self._spatial_squeeze = spatial_squeeze
         self._final_endpoint = final_endpoint
         self._create_aux_logits = create_aux_logits
 
-    def _block_inception_a(self, inputs, scope=None, is_training=is_training):
+    def _block_inception_a(self, inputs, scope=None, is_training=True):
         """Builds Inception-A block for Inception v4 inflated network."""
         with tf.variable_scope(scope, 'BlockInceptionA'):
             with tf.variable_scope('Branch_0'):
@@ -175,10 +174,10 @@ class InceptionI3d_v4(snt.AbstractModule):
             return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3])
 
 
-    def _block_reduction_a(self, inputs, scope=None, is_training=is_training):
+    def _block_reduction_a(self, inputs, scope=None, is_training=True):
         """Builds Reduction-A block for Inception v4 inflated network."""
         with tf.variable_scope(scope, 'BlockReductionAnormalizer_fn'):
-            with tf.variable_scope('Branch_0'):normalizer_fn
+            with tf.variable_scope('Branch_0'):
                 branch_0 = Unit3D(output_channels=384, kernel_shape=[3, 3, 3], padding=snt.VALID,
                         stride=[2, 2, 2], name='Conv3d_1a_3x3')(inputs, is_training=is_training),
 
@@ -196,7 +195,7 @@ class InceptionI3d_v4(snt.AbstractModule):
 
             return tf.concat(axis=4, values=[branch_0, branch_1, branch_2])
 
-    def _block_inception_b(self, inputs, scope=None, is_training=is_training):
+    def _block_inception_b(self, inputs, scope=None, is_training=True):
         """Builds Inception-B block for Inception v4 inflated network."""
         with tf.variable_scope(scope, 'BlockInceptionB'):
             with tf.variable_scope('Branch_0'):
@@ -234,12 +233,12 @@ class InceptionI3d_v4(snt.AbstractModule):
                 #                 name='Conv3d_0i_7x7')(branch_2, is_training=is_training)
             with tf.variable_scope('Branch_3'):
                 branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 2, 3, 3, 1], # TODO Confirm the '2'
-                                        strides=[1, 1, 1, 1, 1], padding=snt.VALID, name=='AvgPool3d_0a_3x3')
+                                        strides=[1, 1, 1, 1, 1], padding=snt.VALID, name='AvgPool3d_0a_3x3')
                 branch_3 = Unit3D(output_channels=128, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0b_1x1')(branch_3, is_training=is_training)
             return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3])
 
-    def _block_reduction_b(self, inputs, scope=None, is_training=is_training):
+    def _block_reduction_b(self, inputs, scope=None, is_training=True):
         """Builds Reduction-B block for Inception v4 inflated network."""
         with tf.variable_scope(scope, 'BlockReductionB'):
             with tf.variable_scope('Branch_0'):
@@ -269,7 +268,7 @@ class InceptionI3d_v4(snt.AbstractModule):
             return tf.concat(axis=3, values=[branch_0, branch_1, branch_2])
 
 
-    def _block_inception_c(self, inputs, scope=None, is_training=is_training):
+    def _block_inception_c(self, inputs, scope=None, is_training=True):
         """Builds Inception-C block for Inception v4 inflated network."""
         with tf.variable_scope(scope, 'BlockInceptionC'):
             with tf.variable_scope('Branch_0'):
@@ -299,14 +298,14 @@ class InceptionI3d_v4(snt.AbstractModule):
                 branch_2 = tf.concat(axis=4, values=[
                             Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
                                 name='Conv3d_0b_1x3')(branch_2, is_training=is_training),
-                            Unit3D(branch_2, output_channels=256, kernel_shape=[1, 3, 1],
+                            Unit3D(output_channels=256, kernel_shape=[1, 3, 1],
                                 name='Conv3d_0c_1x3')(branch_2, is_training=is_training),
                             Unit3D(output_channels=256, kernel_shape=[3, 1, 1],
-                                name='Conv3d_0d_1x3')(branch_2, is_training=is_training)], 4)
+                                name='Conv3d_0d_1x3')(branch_2, is_training=is_training)])
 
             with tf.variable_scope('Branch_3'):
                 branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 2, 3, 3, 1], # TODO Confirm the '2'
-                                        strides=[1, 1, 1, 1, 1], padding=snt.VALID, name=='AvgPool3d_0a_3x3')
+                                        strides=[1, 1, 1, 1, 1], padding=snt.VALID, name='AvgPool3d_0a_3x3')
                 branch_3 = Unit3D(output_channels=256, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0b_1x1')(branch_3, is_training=is_training)
             return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3])
@@ -332,7 +331,7 @@ class InceptionI3d_v4(snt.AbstractModule):
 
         def add_and_check_final(name, net):
             end_points[name] = net
-            return name == final_endpoint
+            return name == self._final_endpoint
 
         # 299 x 299 x 3
         end_point = 'Conv3d_1a_3x3'
@@ -355,7 +354,7 @@ class InceptionI3d_v4(snt.AbstractModule):
         # 147 x 147 x 64
         with tf.variable_scope('Mixed_3a'):
             with tf.variable_scope('Branch_0'):
-                branch_0 = tf.nn.max_pool3d(net, ksize=[1, 1, 3, 3, 1], strides=[1, 1, 2, 2, 1],
+                branch_0 = tf.nn.max_pool3d(net, ksize=[1, 1, 3, 3, 1], strides=[1, 2, 2, 2, 1],
                                             padding='VALID', name='MaxPool_0a_3x3')
             with tf.variable_scope('Branch_1'):
                 branch_1 =  Unit3D(output_channels=96, kernel_shape=[3, 3, 3], stride=[2, 2, 2],
@@ -423,7 +422,7 @@ class InceptionI3d_v4(snt.AbstractModule):
             if add_and_check_final(block_scope, net): return net, end_points
 
 
-    def _build(self, inputs, is_training, dropout_keep_prob=1.0):
+    def _build(self, inputs, is_training, dropout_keep_prob=0.8):
 
         """Connects the model to inputs.
 
@@ -441,7 +440,7 @@ class InceptionI3d_v4(snt.AbstractModule):
             indexed by endpoint name.
         """
         end_points = {}
-        with tf.variable_scope(scope, 'InceptionV4', [inputs], reuse=reuse) as scope:
+        with tf.variable_scope('InceptionV4'):
             net, end_points = self._build_base(inputs, is_training)
 
             # Auxiliary Head logits
@@ -463,23 +462,23 @@ class InceptionI3d_v4(snt.AbstractModule):
             # TODO(sguada,arnoegw): Consider adding a parameter global_pool which
             # can be set to False to disable pooling here (as in resnet_*()).
             with tf.variable_scope('Logits'):
-            # 8 x 8 x 1536
-            kernel_size = net.get_shape()[1:4]
-            if kernel_size.is_fully_defined():
-                net = slim.avg_pool3d(net, kernel_size, padding='VALID', scope='AvgPool3D_1a')
-            else:
-                net = tf.reduce_mean(net, [1, 2, 3], keep_dims=True,
-                                    name='global_pool')
-            end_points['global_pool'] = net
-            if not num_classes:
-                return net, end_points
-            # 1 x 1 x 1536
-            net = slim.dropout(net, dropout_keep_prob, scope='Dropout_1b')
-            net = slim.flatten(net, scope='PreLogitsFlatten')
-            end_points['PreLogitsFlatten'] = net
-            # 1536
-            logits = slim.fully_connected(net, num_classes, activation_fn=None,
-                                            scope='Logits')
-            end_points['Logits'] = logits
-            end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
-    return logits, end_points
+                # 8 x 8 x 1536
+                kernel_size = net.get_shape()[1:4]
+                if kernel_size.is_fully_defined():
+                    net = slim.avg_pool3d(net, kernel_size, padding='VALID', scope='AvgPool3D_1a')
+                else:
+                    net = tf.reduce_mean(net, [1, 2, 3], keep_dims=True,
+                                        name='global_pool')
+                end_points['global_pool'] = net
+                if not self._num_classes:
+                    return net, end_points
+                # 1 x 1 x 1536
+                net = slim.dropout(net, dropout_keep_prob, scope='Dropout_1b')
+                net = slim.flatten(net, scope='PreLogitsFlatten')
+                end_points['PreLogitsFlatten'] = net
+                # 1536
+                logits = slim.fully_connected(net, self._num_classes, activation_fn=None,
+                                                scope='Logits')
+                end_points['Logits'] = logits
+                end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
+        return logits, end_points

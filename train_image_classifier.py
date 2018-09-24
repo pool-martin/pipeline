@@ -240,9 +240,11 @@ def create_estimator(steps_per_epoch):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4']):
 
-        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']
-        ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
+        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
+            ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
                                             fine_tune.get_variables_to_restore(FLAGS.model_name))
+        else:
+            ws = None
 
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
