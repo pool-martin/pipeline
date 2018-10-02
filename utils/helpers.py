@@ -76,6 +76,22 @@ def get_sets_to_extract(FLAGS):
              'svm_validation_set': svm_validation_set,
              'test_set': test_set }
 
+def get_sets_to_extract_violence(FLAGS):
+    training_set = []
+    validation_set = []
+    test_set = []
+
+    with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+        training_set = f.read().split('\n')[:-1]
+    with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+        validation_set = f.read().split('\n')[:-1]
+    with open(os.path.join(assembly_sets_path(FLAGS), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+        test_set = f.read().split('\n')[:-1]
+
+    return { 'train': training_set,
+             'val': validation_set,
+             'test': test_set }
+
 def configure_optimizer(FLAGS, learning_rate):
   """Configures the optimizer used for training.
 
