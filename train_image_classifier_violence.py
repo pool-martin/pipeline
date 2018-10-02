@@ -22,7 +22,7 @@ from preprocessing import preprocessing_factory
 FLAGS = define_flags()
 
 # Global vars
-dataset_labels = ['NonPorn', 'Porn']
+dataset_labels = ['NonViolent', 'Violent']
 dataset_labels = ['0', '1'] #We are extracting labels from filenames and there is is as '1' and '0'
 training_set_length = 0
 
@@ -54,7 +54,7 @@ def input_fn(videos_in_split,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
         snippet = tf.squeeze(snippet)
         
-        return ({'snippet_id': video_name, 'snippet': snippet, 'labels': labels }, labels)
+        return ({'snippet_id': video_name, 'snippet': snippet, 'label': table.lookup(labels[8]) }, table.lookup(labels[8]))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
 
