@@ -33,31 +33,25 @@ class FileVideoStream:
         t.start()
         return self
     def update(self):
-        print('11111111111')
         # keep looping infinitely
         self.stream.set(cv2.CAP_PROP_POS_FRAMES, 0)
         for i in range(0, 125):
             # if the thread indicator variable is set, stop the thread
             if self.stopped:
                 return
-            print('222222222222222222')
 
             # read the next frame from the file
             (grabbed, frame) = self.stream.read()
-            print('333333333333333333')
 
             # if the `grabbed` boolean is `False`, then we have
             # reached the end of the video file
             if not grabbed:
                 self.stop()
                 return
-            print('44444444444444')
 
             # add the frame to the queue
             self.Q.put([grabbed, frame])
         self.stop()
-        print('5555555555555')
-
         return
 
 
@@ -90,8 +84,7 @@ def get_video_frames(video_path, image_size, split_type):
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     # height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    for i in range(0, 125):
-        print('666666666666666')
+    while fvs.more():
 
         ret, frame = fvs.read()
         # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
@@ -101,7 +94,6 @@ def get_video_frames(video_path, image_size, split_type):
             print('Error extracting video {} frame {}'.format(video_path, i))
             break
 
-        print('777777777777777')
         # unfortunately opencv uses bgr color format as default
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, tuple(image_size), interpolation=cv2.INTER_CUBIC)
