@@ -84,7 +84,7 @@ def get_video_frames(video_path, image_size, split_type):
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     # height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    while fvs.more():
+    for i in range(0, 125):
 
         ret, frame = fvs.read()
         # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)

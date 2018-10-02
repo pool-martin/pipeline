@@ -43,7 +43,7 @@ def input_fn(videos_in_split,
         frame_info = tf.string_split([fragment_identificator], delimiter=' ')
         video_name = frame_info.values[0]
         labels = [ frame_info.values[x] for x in [1, 2, 3, 4, 5, 6, 7, 8]]
-        video_path = tf.string_join( inputs=[os.path.join(FLAGS.dataset_dir, '2013-mp4'), '/', set_type,  '/', video_name])
+        video_path = tf.string_join( inputs=[os.path.join(FLAGS.dataset_dir, 'videos'), '/', set_type,  '/', video_name])
 
         snippet = tf.py_func(get_video_frames, [video_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
         snippet_size = FLAGS.snippet_size
