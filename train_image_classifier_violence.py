@@ -54,7 +54,7 @@ def input_fn(videos_in_split,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
         snippet = tf.squeeze(snippet)
         
-        return ({'snippet_id': video_name, 'snippet': snippet, 'label': table.lookup(labels[8]) }, table.lookup(labels[8]))
+        return ({'snippet_id': video_name, 'snippet': snippet, 'label': table.lookup(labels[7]) }, table.lookup(labels[7]))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
 
