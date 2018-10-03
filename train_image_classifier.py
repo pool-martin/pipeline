@@ -208,7 +208,7 @@ def model_fn(features, labels, mode, params=None, config=None):
             'recall': tf.metrics.recall(features['label'], predicted_indices)
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
-        tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['accuracy'])
+        tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['mean_per_class_accuracy'])
         tf.summary.scalar('auc', eval_metric_ops['auc'])
         tf.summary.scalar('mse', eval_metric_ops['mse'])
         tf.summary.scalar('precision', eval_metric_ops['precision'])

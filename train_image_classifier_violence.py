@@ -23,7 +23,7 @@ FLAGS = define_flags()
 
 # Global vars
 dataset_labels = ['NonViolent', 'Violent']
-dataset_labels = ['0', '1'] #We are extracting labels from filenames and there is is as '1' and '0'
+dataset_labels = ['0', '1', '0', '1', '0', '1', '0', '1'] #We are extracting labels from text file and there is as '1' or '0'
 training_set_length = 0
 
 def input_fn(videos_in_split,
@@ -35,14 +35,12 @@ def input_fn(videos_in_split,
              buffer_size=4096,
              prefetch_buffer_size=None):
 
-    table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
-
     image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
 
     def _map_func(fragment_identificator):
         frame_info = tf.string_split([fragment_identificator], delimiter=' ')
         video_name = frame_info.values[0]
-        labels = [ frame_info.values[x] for x in [1, 2, 3, 4, 5, 6, 7, 8]]
+        labels = [ tf.strings.to_number(frame_info.values[x], out_type=tf.int64) for x in range(1,9)]
         video_path = tf.string_join( inputs=[os.path.join(FLAGS.dataset_dir, 'videos'), '/', set_type,  '/', video_name])
 
         snippet = tf.py_func(get_video_frames, [video_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
@@ -54,7 +52,7 @@ def input_fn(videos_in_split,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
         snippet = tf.squeeze(snippet)
         
-        return ({'snippet_id': video_name, 'snippet': snippet, 'label': table.lookup(labels[7]) }, table.lookup(labels[7]))
+        return ({'snippet_id': video_name, 'snippet': snippet, 'labels': labels }, labels)
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
 
@@ -156,23 +154,19 @@ def model_fn(features, labels, mode, params=None, config=None):
         scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
         pattern_to_exclude = ['biases', "global_step"]
 
-    # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
-    #     #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
-    #     ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-    #     scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
-
     predicted_indices = tf.argmax(logits, axis=-1)
 
     if mode in (ModeKeys.TRAIN, ModeKeys.EVAL):
         global_step = tf.train.get_or_create_global_step()
-        loss = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(features['label'], len(dataset_labels)), logits=logits)
+#        loss = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(features['label'], len(dataset_labels)), logits=logits)
+        loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=features['labels'], logits=logits)
         tf.summary.scalar('loss', loss)
 
 
     if mode == ModeKeys.PREDICT:
         predictions = {
            'snippet_id': features['snippet_id'],
-           'truth_label': features['label'],
+           'truth_label': features['labels'],
            'predicted_label': predicted_indices,
            'probabilities': probabilities,
            'features': extracted_features,
@@ -191,25 +185,31 @@ def model_fn(features, labels, mode, params=None, config=None):
         with tf.control_dependencies(update_ops):
             train_op = optimizer.minimize(loss, global_step=global_step)
 
-        accuracy = slim.metrics.accuracy(features['label'], predicted_indices)
-        tf.summary.scalar('accuracy', accuracy)
+        correct_prediction = tf.equal( tf.round( predicted_indices ), tf.round( features['labels'] ) )
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+        # to get the mean accuracy where all labels need to be correct
+        all_labels_true = tf.reduce_min(tf.cast(correct_prediction, tf.float32), 1)
+        accuracy2 = tf.reduce_mean(all_labels_true)
+        tf.summary.scalar('accuracy_1', accuracy)
+        tf.summary.scalar('all_labels_true_accuracy', accuracy2)
+
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
 
     if mode == ModeKeys.EVAL:
-        eval_metric_ops = {
-            'accuracy': tf.metrics.accuracy(features['label'], predicted_indices),
-            'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
-            'auc': tf.metrics.auc(features['label'], predicted_indices),
-            "mse": tf.metrics.mean_squared_error(features['label'], predicted_indices),
-            'precision': tf.metrics.precision(features['label'], predicted_indices),
-            'recall': tf.metrics.recall(features['label'], predicted_indices)
-        }
-        tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
-        tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['accuracy'])
-        tf.summary.scalar('auc', eval_metric_ops['auc'])
-        tf.summary.scalar('mse', eval_metric_ops['mse'])
-        tf.summary.scalar('precision', eval_metric_ops['precision'])
-        tf.summary.scalar('recall', eval_metric_ops['recall'])
+        eval_metric_ops = {}
+
+        correct_prediction = tf.equal( tf.round( predicted_indices ), tf.round( features['labels'] ) )
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+        # to get the mean accuracy where all labels need to be correct
+        all_labels_true = tf.reduce_min(tf.cast(correct_prediction, tf.float32), 1)
+        accuracy2 = tf.reduce_mean(all_labels_true)
+        tf.summary.scalar('accuracy_1', accuracy)
+        tf.summary.scalar('all_labels_true_accuracy', accuracy2)
+        eval_metric_ops['accuracy_1'] = accuracy
+        eval_metric_ops['all_labels_true_accuracy'] = accuracy2
+
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def create_estimator(steps_per_epoch):

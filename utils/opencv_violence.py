@@ -59,8 +59,11 @@ class FileVideoStream:
         # check if the video was opened with success
         return self.stream.isOpened()
     def read(self):
-        # return next frame in the queue
-        return self.Q.get()
+        if self.stopped and self.Q.qsize() == 0:
+            return [False, None]
+        else:
+            # return next frame in the queue
+            return self.Q.get()
     def more(self):
         # return True if there are still frames in the queue
         return self.Q.qsize() > 0
@@ -71,7 +74,7 @@ class FileVideoStream:
 def get_video_frames(video_path, image_size, split_type):
     video_frames = []
 
-    t1= time.time()
+    # t1= time.time()
     video_path = video_path.decode("utf-8") 
 
     print(video_path)
@@ -79,13 +82,12 @@ def get_video_frames(video_path, image_size, split_type):
     fvs = FileVideoStream(video_path).start()
 
 #    cap = cv2.VideoCapture(video_path)
-    if (fvs.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path))
+    if (fvs.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path)) 
 
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     # height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     for i in range(0, 125):
-
         ret, frame = fvs.read()
         # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
         # ret, frame = cap.read()
@@ -114,8 +116,8 @@ def get_video_frames(video_path, image_size, split_type):
             video_frames.append(video_frames[0])
 
     results = np.stack(video_frames, axis=0)
-    t2= time.time()
-    print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
+    # t2= time.time()
+    # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
     return results
 
 
