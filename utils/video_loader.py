@@ -14,6 +14,12 @@ class VideoLoader:
         self.path = path
         self.frame_shape = frame_shape
         self.stop_event = stop_event
+        if self.frame_shape:
+            outputdict = {}
+            outputdict['-s'] = '{}x{}'.format(self.frame_shape, self.frame_shape)
+            self.outputdict = outputdict
+        else:
+            self.outputdict = None
 
         # initialize the queue used to store frames read from
         # the video file
@@ -29,10 +35,8 @@ class VideoLoader:
         for video in self.videos_to_load:
             video_path = os.path.join(self.path, 'videos', '{}.mp4'.format(video))
             print('starting loading {}'.format(video_path))
-            outputdict = {}
-            if self.frame_shape:
-                outputdict['-s'] = '{}x{}'.format(self.frame_shape, self.frame_shape)
-            self.dataset[video] = skvideo.io.vread(video_path,  outputdict=outputdict)
+            if video not in self.dataset[video]:
+                self.dataset[video] = skvideo.io.vread(video_path,  outputdict=self.outputdict)
             print('finished loading {}'.format(video_path))
             if self.stop_event.is_set():
                 break
@@ -46,13 +50,8 @@ class VideoLoader:
         video = video.decode("utf-8") 
         print('#################################### GET_VIDEO_FRAME {}'.format(video))
 
-        # while not self.stopped:
-        #     if video in self.dataset or self.stop_event.is_set():
-        #         print('video {} loaded'.format(video))
-        #         break
-        #     else:
-        #         print('not finished to load dataset')
-        #         time.sleep(10)
+        if video not in self.dataset:
+            self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict)
 
         if(split_type.decode("utf-8") == '2D'):
             frame_numbers = [frames_identificator]
