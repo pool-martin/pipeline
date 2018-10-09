@@ -13,12 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
         git \
         wget \
-        libsm6 libxext6 libxrender-dev # for python opencv
+        libsm6 libxext6 libxrender-dev \
+        ffmpeg  frei0r-plugins # for scikit-video
 
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
-RUN pip install pandas scikit-learn opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-hub
+RUN pip install pandas scikit-learn sk-video opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-hub
 
 USER OUTSIDE_USER
 

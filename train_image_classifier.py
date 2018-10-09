@@ -5,6 +5,8 @@ import tensorflow as tf
 from tensorflow.python.estimator.model_fn import EstimatorSpec, ModeKeys #pylint: disable=E0611
 import tensorflow.contrib.slim as slim
 import tensorflow_hub as hub
+import gc
+from threading import Event
 #tf.enable_eager_execution()
 
 import numpy as np
@@ -14,6 +16,7 @@ from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
 from utils.opencv import get_video_frames
+from utils.video_loader import VideoLoader
 from utils.flags import define_flags
 from utils.save_features import save_extracted_features
 from utils import fine_tune
@@ -25,6 +28,8 @@ FLAGS = define_flags()
 dataset_labels = ['NonPorn', 'Porn']
 dataset_labels = ['0', '1'] #We are extracting labels from filenames and there is is as '1' and '0'
 training_set_length = 0
+
+dataset_loader = None
 
 def input_fn(videos_in_split,
              image_size=tuple([FLAGS.image_shape,FLAGS.image_shape]),
@@ -47,10 +52,14 @@ def input_fn(videos_in_split,
         snippet_path = tf.string_join( inputs=[helpers.assembly_snippets_path(FLAGS), '/', video_name, '/', frame_identificator, '.txt' , ])
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
 
-        snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
-        snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
-
-        snippet.set_shape([snippet_size] + list(image_size) + [3])
+        if FLAGS.dataset_to_memory:
+#            global dataset_loader
+            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size,FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
+            snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
+        else:
+            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
+            snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
+            snippet.set_shape([snippet_size] + list(image_size) + [3])
 
         snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
@@ -256,7 +265,8 @@ def create_estimator(steps_per_epoch):
 
     return estimator
 
-def main():
+def main(stop_event):
+
     if FLAGS.gpu_to_use:
         os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu_to_use
 
@@ -278,6 +288,12 @@ def main():
         validation_set_length = len(network_validation_set)
         validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+
+        if FLAGS.dataset_to_memory:
+            complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
+            global dataset_loader
+            dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+            dataset_loader.start()
 
         estimator = create_estimator(steps_per_epoch)
 
@@ -318,6 +334,15 @@ def main():
     if FLAGS.predict:
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
 
+        if FLAGS.dataset_to_memory:
+            complete_set = list(set([x.split('_')[0] for x in sets_to_extract]))
+            global dataset_loader
+            dataset_loader = None
+            gc.collect()
+            dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+            dataset_loader.start()
+
+
         for set_name, set_to_extract in sets_to_extract.items():
             steps_per_epoch = int(len(set_to_extract)/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
             estimator = create_estimator(steps_per_epoch)
@@ -340,5 +365,9 @@ def main():
 
 
 if __name__ == '__main__':
-    tf.logging.set_verbosity(tf.logging.INFO)
-    main()
+    stop_event = Event() # used to signal termination to the threads
+    try:
+        tf.logging.set_verbosity(tf.logging.INFO)
+        main(stop_event)
+    except (KeyboardInterrupt, SystemExit):
+        stop_event.set()

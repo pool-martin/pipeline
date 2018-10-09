@@ -19,6 +19,8 @@ def define_flags():
         'sets_dir', '/Exp/2kporn/splits', 'The sets to be used.')
     tf.app.flags.DEFINE_bool(
         'mini_sets', False, 'use mini sets (to debug).')
+    tf.app.flags.DEFINE_bool(
+        'dataset_to_memory', False, 'Load dataset to memory.')
     
     tf.app.flags.DEFINE_string(
         'snippets_dir', '', 'The sets to be used.')
