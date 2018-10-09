@@ -35,7 +35,7 @@ class VideoLoader:
         for video in self.videos_to_load:
             video_path = os.path.join(self.path, 'videos', '{}.mp4'.format(video))
             print('starting loading {}'.format(video_path))
-            if video not in self.dataset[video]:
+            if video not in self.dataset:
                 self.dataset[video] = skvideo.io.vread(video_path,  outputdict=self.outputdict)
             print('finished loading {}'.format(video_path))
             if self.stop_event.is_set():
