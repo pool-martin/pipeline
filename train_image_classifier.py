@@ -7,6 +7,7 @@ import tensorflow.contrib.slim as slim
 import tensorflow_hub as hub
 import gc
 from threading import Event
+import time
 #tf.enable_eager_execution()
 
 import numpy as np
@@ -174,6 +175,7 @@ def model_fn(features, labels, mode, params=None, config=None):
     #     scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
 
     predicted_indices = tf.argmax(logits, axis=-1)
+    print('logits shape ', logits.shape, 'predictions shape ', probabilities.shape, 'predicted_indices shape ', predicted_indices.shape)
 
     if mode in (ModeKeys.TRAIN, ModeKeys.EVAL):
         global_step = tf.train.get_or_create_global_step()
@@ -292,8 +294,10 @@ def main(stop_event):
         if FLAGS.dataset_to_memory:
             complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
             global dataset_loader
+            dataset_loader = None
             dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
             dataset_loader.start()
+            time.sleep(60)
 
         estimator = create_estimator(steps_per_epoch)
 
@@ -341,6 +345,7 @@ def main(stop_event):
             gc.collect()
             dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
             dataset_loader.start()
+            time.sleep(60)
 
 
         for set_name, set_to_extract in sets_to_extract.items():
