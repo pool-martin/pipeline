@@ -212,14 +212,14 @@ def model_fn(features, labels, mode, params=None, config=None):
     if mode == ModeKeys.EVAL:
         eval_metric_ops = {
             'accuracy': tf.metrics.accuracy(features['label'], predicted_indices),
-            'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
+            # 'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
             'auc': tf.metrics.auc(features['label'], predicted_indices),
             "mse": tf.metrics.mean_squared_error(features['label'], predicted_indices),
             'precision': tf.metrics.precision(features['label'], predicted_indices),
             'recall': tf.metrics.recall(features['label'], predicted_indices)
         }
         tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
-        tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['mean_per_class_accuracy'])
+        # tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['mean_per_class_accuracy'])
         tf.summary.scalar('auc', eval_metric_ops['auc'])
         tf.summary.scalar('mse', eval_metric_ops['mse'])
         tf.summary.scalar('precision', eval_metric_ops['precision'])
