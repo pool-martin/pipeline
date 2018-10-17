@@ -6,7 +6,7 @@ ARG OUTSIDE_GROUP
 ARG OUTSIDE_GID
 
 RUN groupadd -g $OUTSIDE_GID $OUTSIDE_GROUP && \
-    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo -p $OUTSIDE_GROUP $OUTSIDE_USER
+    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo,adm -p $(openssl passwd -1 $OUTSIDE_USER) $OUTSIDE_USER
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -26,10 +26,15 @@ RUN pip install --upgrade pip
 RUN pip install pandas scikit-learn sk-video matplotlib numpy dm-sonnet joblib keras tensorflow-hub
 
 RUN mkdir /temp_build && cd /temp_build && git clone https://github.com/pool-martin/opencv.git && cd opencv && git checkout develop && \
-mkdir build && cd build && \
-cmake -D WITH_TBB=ON -D WITH_OPENMP=ON -D WITH_IPP=ON -D CMAKE_BUILD_TYPE=RELEASE     -D CMAKE_INSTALL_PREFIX=/usr/local  -D WITH_NVCUVID=ON   -D WITH_CUDA=ON     -D ENABLE_FAST_MATH=1     -D CUDA_FAST_MATH=1     -D WITH_CUBLAS=1     -D INSTALL_PYTHON_EXAMPLES=OFF  -D BUILD_DOCS=OFF -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D WITH_CSTRIPES=ON -D WITH_OPENCL=ON   -D BUILD_EXAMPLES=OFF .. && \
-make -j4 && make install && \
-cd / && rm -rf /temp_build
+mkdir build && cd build
+
+RUN cd /temp_build/opencv/build && cmake -D WITH_TBB=ON -D WITH_OPENMP=ON -D WITH_IPP=ON -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local  -D WITH_NVCUVID=ON \
+-D WITH_CUDA=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D INSTALL_PYTHON_EXAMPLES=OFF -D BUILD_DOCS=OFF \
+-D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D WITH_CSTRIPES=ON -D WITH_OPENCL=ON -D BUILD_EXAMPLES=OFF \
+-D PYTHON_DEFAULT_EXECUTABLE=/usr/bin/python3  ..
+
+RUN cd /temp_build/opencv/build &&  make -j4 && make install && ldconfig && cd / 
+&& rm -rf /temp_build
 
 USER OUTSIDE_USER
 
