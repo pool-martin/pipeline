@@ -35,6 +35,8 @@ def get_scope_and_patterns_to_exclude(model_name):
     if model_name == 'inception_v4':
         scopes_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
         pattern_to_exclude = ['biases', "global_step"]
+    if model_name == 'mobilenet_v2':
+        scopes_to_exclude = ["MobilenetV2/Logits"]
     elif model_name == 'i3d':
         scopes_to_exclude = ["RGB/inception_i3d/Logits"]
         pattern_to_exclude = ["global_step"]
