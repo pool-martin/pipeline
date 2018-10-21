@@ -174,7 +174,7 @@ def define_flags():
 
     if(tf.app.flags.FLAGS.model_name in ['i3d', 'c3d']):
         tf.app.flags.FLAGS.split_type = '3D'
-    elif(tf.app.flags.FLAGS.model_name in ['inception_v1', 'inception_v4']):
+    elif(tf.app.flags.FLAGS.model_name in ['inception_v1', 'inception_v4','mobilenet_v2']):
         tf.app.flags.FLAGS.split_type = '2D'
 
 

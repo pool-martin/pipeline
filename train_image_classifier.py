@@ -13,6 +13,7 @@ import time
 import numpy as np
 
 from nets import i3d, i3d_v4, c3d, inception_v1, inception_v4
+from nets.mobilenet import mobilenet_v2
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
@@ -169,6 +170,12 @@ def model_fn(features, labels, mode, params=None, config=None):
         scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
         pattern_to_exclude = ['biases', "global_step"]
 
+    if FLAGS.model_name == 'mobilenet_v2':
+        logits, end_points = mobilenet_v2.mobilenet(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
+        probabilities = end_points['Predictions']
+        extracted_features = tf.layers.Flatten()(end_points['global_pool'])
+        scope_to_exclude = ["MobilenetV2/Logits"]
+
     # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
     #     #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
     #     ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
@@ -251,7 +258,7 @@ def create_estimator(steps_per_epoch):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4']):
 
-        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
+        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']:
             ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
                                             fine_tune.get_variables_to_restore(FLAGS.model_name))
         else:
