@@ -277,8 +277,9 @@ def create_estimator(steps_per_epoch):
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']):
 
         if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
-            ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
-                                            fine_tune.get_variables_to_restore(FLAGS.model_name))
+            # ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
+            #                                 fine_tune.get_variables_to_restore(FLAGS.model_name))
+            ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS))
         else:
             ws = None
 
