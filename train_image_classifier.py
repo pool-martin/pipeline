@@ -12,8 +12,8 @@ import time
 
 import numpy as np
 
-from nets import i3d, i3d_v4, c3d, inception_v1, inception_v4
-from nets.mobilenet import mobilenet_v2
+from nets import i3d, i3d_v4, c3d
+from nets import nets_factory
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
@@ -156,25 +156,41 @@ def model_fn(features, labels, mode, params=None, config=None):
         probabilities = tf.nn.softmax(logits)
         extracted_features = tf.layers.Flatten()(end_points['max_pool5'])
 
-    if FLAGS.model_name == 'inception_v1':
-        logits, end_points = inception_v1.inception_v1(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
-        probabilities = end_points['Predictions']
-        extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
-        scope_to_exclude = ["InceptionV1/Logits"]
-        #pattern_to_exclude = ['biases', "global_step"]
+    # if FLAGS.model_name == 'inception_v1':
+    #     logits, end_points = inception_v1.inception_v1(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
+    #     probabilities = end_points['Predictions']
+    #     extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+    #     scope_to_exclude = ["InceptionV1/Logits"]
+    #     #pattern_to_exclude = ['biases', "global_step"]
 
-    if FLAGS.model_name == 'inception_v4':
-        logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
-        probabilities = end_points['Predictions']
-        extracted_features = end_points['PreLogitsFlatten']
-        scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-        pattern_to_exclude = ['biases', "global_step"]
+    # if FLAGS.model_name == 'inception_v4':
+    #     logits, end_points = inception_v4.inception_v4(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
+    #     probabilities = end_points['Predictions']
+    #     extracted_features = end_points['PreLogitsFlatten']
+    #     scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
+    #     pattern_to_exclude = ['biases', "global_step"]
 
-    if FLAGS.model_name == 'mobilenet_v2':
-        logits, end_points = mobilenet_v2.mobilenet(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
+    # if FLAGS.model_name == 'mobilenet_v2':
+    #     logits, end_points = mobilenet_v2.mobilenet(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
+    #     probabilities = end_points['Predictions']
+    #     extracted_features = tf.layers.Flatten()(end_points['global_pool'])
+    #     scope_to_exclude = ["MobilenetV2/Logits"]
+
+    if FLAGS.model_name in ['inception_v1', 'inception_v4', 'mobilenet_v2']:
+        network_fn = nets_factory.get_network_fn(
+            FLAGS.model_name,
+            num_classes=len(dataset_labels),
+            weight_decay=FLAGS.weight_decay,
+            is_training=is_training)
+
+        logits, end_points = network_fn(features['snippet'])
         probabilities = end_points['Predictions']
-        extracted_features = tf.layers.Flatten()(end_points['global_pool'])
-        scope_to_exclude = ["MobilenetV2/Logits"]
+        if FLAGS.model_name == 'inception_v1':
+            extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+        if FLAGS.model_name == 'inception_v4':
+            extracted_features = end_points['PreLogitsFlatten']
+        if FLAGS.model_name == 'mobilenet_v2':
+            extracted_features = tf.layers.Flatten()(end_points['global_pool'])
 
     # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
     #     #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
@@ -213,24 +229,26 @@ def model_fn(features, labels, mode, params=None, config=None):
             train_op = optimizer.minimize(loss, global_step=global_step)
 
         accuracy = slim.metrics.accuracy(features['label'], predicted_indices)
-        tf.summary.scalar('accuracy', accuracy)
+        tf.summary.scalar('accuracy_train', accuracy)
+        tf.summary.scalar('learning_rate', learning_rate)
+
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=scaffold)
 
     if mode == ModeKeys.EVAL:
         eval_metric_ops = {
             'accuracy': tf.metrics.accuracy(features['label'], predicted_indices),
-            # 'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
+            'mean_per_class_accuracy': tf.metrics.mean_per_class_accuracy(features['label'], predicted_indices, len(dataset_labels)),
             'auc': tf.metrics.auc(features['label'], predicted_indices),
             "mse": tf.metrics.mean_squared_error(features['label'], predicted_indices),
             'precision': tf.metrics.precision(features['label'], predicted_indices),
             'recall': tf.metrics.recall(features['label'], predicted_indices)
         }
-        tf.summary.scalar('accuracy', eval_metric_ops['accuracy'])
-        # tf.summary.scalar('mean_per_class_accuracy', eval_metric_ops['mean_per_class_accuracy'])
-        tf.summary.scalar('auc', eval_metric_ops['auc'])
-        tf.summary.scalar('mse', eval_metric_ops['mse'])
-        tf.summary.scalar('precision', eval_metric_ops['precision'])
-        tf.summary.scalar('recall', eval_metric_ops['recall'])
+        tf.summary.scalar('accuracy_val', eval_metric_ops['accuracy'])
+        tf.summary.scalar('mean_per_class_accuracy_val', eval_metric_ops['mean_per_class_accuracy'])
+        tf.summary.scalar('auc_val', eval_metric_ops['auc'])
+        tf.summary.scalar('mse_val', eval_metric_ops['mse'])
+        tf.summary.scalar('precision_val', eval_metric_ops['precision'])
+        tf.summary.scalar('recall_val', eval_metric_ops['recall'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def create_estimator(steps_per_epoch):
@@ -333,8 +351,7 @@ def main(stop_event):
         validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
-        steps_per_epoch = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
-        estimator = create_estimator(training_set_length)
+        estimator = create_estimator(validation_set_max_steps)
         estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
                                                     batch_size=int(FLAGS.batch_size),
