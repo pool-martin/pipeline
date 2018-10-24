@@ -200,8 +200,8 @@ def model_fn(features, labels, mode, params=None, config=None):
 
     # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
         #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
-    ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-    scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
+        # ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
+        # scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
 
     predicted_indices = tf.argmax(logits, axis=-1)
     print('logits shape ', logits.shape, 'predictions shape ', probabilities.shape, 'predicted_indices shape ', predicted_indices.shape)
@@ -282,11 +282,11 @@ def create_estimator(steps_per_epoch):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']):
 
-        # if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
-        #     ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
-        #                                     fine_tune.get_variables_to_restore(FLAGS.model_name))
-        # else:
-        ws = None
+        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
+            ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
+                                            fine_tune.get_variables_to_restore(FLAGS.model_name))
+        else:
+            ws = None
 
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
