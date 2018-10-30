@@ -36,6 +36,8 @@ RUN cd /temp_build/opencv/build && cmake -D WITH_TBB=ON -D WITH_OPENMP=ON -D WIT
 RUN cd /temp_build/opencv/build &&  make -j4 && make install && ldconfig && cd / 
 && rm -rf /temp_build
 
-USER OUTSIDE_USER
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# USER OUTSIDE_USER
 
 WORKDIR /workspace
