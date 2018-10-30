@@ -6,21 +6,37 @@ ARG OUTSIDE_GROUP
 ARG OUTSIDE_GID
 
 RUN groupadd -g $OUTSIDE_GID $OUTSIDE_GROUP && \
-    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo -p $OUTSIDE_GROUP $OUTSIDE_USER
+    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo,adm -p $(openssl passwd -1 $OUTSIDE_USER) $OUTSIDE_USER
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
         git \
         wget \
+        sudo \
+        libjpeg8-dev libtiff5-dev libjasper-dev libpng12-dev libgtk2.0-dev \
+        libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
+        libatlas-base-dev gfortran libhdf5-serial-dev \
         libsm6 libxext6 libxrender-dev \
         ffmpeg  frei0r-plugins # for scikit-video
 
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
-RUN pip install pandas scikit-learn sk-video opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-hub wrapt tensorflow-probability
+RUN pip install pandas scikit-learn sk-video matplotlib numpy dm-sonnet joblib keras tensorflow-hub wrapt tensorflow-probability
 
-USER OUTSIDE_USER
+RUN mkdir /temp_build && cd /temp_build && git clone https://github.com/pool-martin/opencv.git && cd opencv && git checkout develop && mkdir build
+
+RUN cd /temp_build/opencv/build && cmake -D WITH_TBB=ON -D WITH_OPENMP=ON -D WITH_IPP=ON -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local  -D WITH_NVCUVID=ON \
+-D WITH_CUDA=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D INSTALL_PYTHON_EXAMPLES=OFF -D BUILD_DOCS=OFF \
+-D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D WITH_CSTRIPES=ON -D WITH_OPENCL=ON -D BUILD_EXAMPLES=OFF \
+-D PYTHON_DEFAULT_EXECUTABLE=/usr/bin/python3  ..
+
+RUN cd /temp_build/opencv/build &&  make -j4 && make install && ldconfig && cd / 
+&& rm -rf /temp_build
+
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# USER OUTSIDE_USER
 
 WORKDIR /workspace
