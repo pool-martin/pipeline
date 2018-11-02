@@ -143,7 +143,7 @@ def model_fn(features, labels, mode, params=None, config=None):
             extract_end_point = end_points['Mixed_5c']
 
             kernel_size = extract_end_point.get_shape()[1:4]
-            net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 4, 7, 7, 1],
+            net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 2, 7, 7, 1],
                             strides=[1, 1, 1, 1, 1], padding='VALID')
             end_points['global_pool'] = net
 
