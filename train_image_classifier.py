@@ -139,7 +139,16 @@ def model_fn(features, labels, mode, params=None, config=None):
             dnn_model = i3d.InceptionI3d(num_classes=len(dataset_labels), spatial_squeeze=True)
             probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
             logits = end_points['Logits']
-            extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+
+            extract_end_point = end_points['Mixed_5c']
+
+            kernel_size = extract_end_point.get_shape()[1:4]
+            net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 4, 7, 7, 1],
+                            strides=[1, 1, 1, 1, 1], padding='VALID')
+            end_points['global_pool'] = net
+
+        end_points['extracted_features'] = tf.layers.Flatten()(end_points['global_pool'])
+        extracted_features = end_points['extracted_features']
         scope_to_exclude = ["RGB/inception_i3d/Logits"]
         pattern_to_exclude = []
 
@@ -197,6 +206,9 @@ def model_fn(features, labels, mode, params=None, config=None):
             extracted_features = tf.layers.Flatten()(end_points['global_pool'])
             scope_to_exclude = ["MobilenetV2/Logits"]
             pattern_to_exclude = []
+
+    for key, end_point in end_points.items():
+        print("endpoint: {}, shape: {}".format(key, end_point.shape))
 
     # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
         #tf.train.init_from_checkpoint(ws_checkpoint, {v.name.split(':')[0]: v for v in variables_to_restore})
