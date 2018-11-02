@@ -6,13 +6,14 @@ ARG OUTSIDE_GROUP
 ARG OUTSIDE_GID
 
 RUN groupadd -g $OUTSIDE_GID $OUTSIDE_GROUP && \
-    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo -p $OUTSIDE_GROUP $OUTSIDE_USER
+    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo,adm -p $(openssl passwd -1 $OUTSIDE_USER) $OUTSIDE_USER
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
         git \
         wget \
+        sudo \
         libsm6 libxext6 libxrender-dev \
         ffmpeg  frei0r-plugins # for scikit-video
 
@@ -21,6 +22,6 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN pip install --upgrade pip
 RUN pip install pandas scikit-learn sk-video opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-hub wrapt tensorflow-probability-gpu
 
-USER OUTSIDE_USER
+# USER OUTSIDE_USER
 
 WORKDIR /workspace
