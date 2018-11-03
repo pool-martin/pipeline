@@ -1,4 +1,4 @@
- FROM tensorflow/tensorflow:1.11.0-rc1-gpu-py3
+ FROM tensorflow/tensorflow:1.12.0-rc2-gpu-py3
 
 ARG OUTSIDE_UID
 ARG OUTSIDE_USER
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
-RUN pip install pandas scikit-learn sk-video opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-hub wrapt tensorflow-probability-gpu
+RUN pip install pandas scikit-learn sk-video opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-probability-gpu wrapt # tensorflow-hub
 
 # USER OUTSIDE_USER
 
