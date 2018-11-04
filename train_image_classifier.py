@@ -211,9 +211,9 @@ def model_fn(features, labels, mode, params=None, config=None):
         print("endpoint: {}, shape: {}".format(key, end_point.shape))
 
     # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
-    ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-    tf.train.init_from_checkpoint(str(ws_path), {v.name.split(':')[0]: v for v in fine_tune.get_variables_to_restore(FLAGS.model_name)})
     # ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
+    # tf.train.init_from_checkpoint(str(ws_path), {v.name.split(':')[0]: v for v in fine_tune.get_variables_to_restore(FLAGS.model_name)})
+    # # ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
     # scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
 
     predicted_indices = tf.argmax(logits, axis=-1)
