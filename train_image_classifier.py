@@ -196,25 +196,18 @@ def model_fn(features, labels, mode, params=None, config=None):
         probabilities = end_points['Predictions']
         if FLAGS.model_name == 'inception_v1':
             extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
-            scope_to_exclude = ["InceptionV1/Logits"]
-            pattern_to_exclude = ['biases', "global_step"]
         if FLAGS.model_name == 'inception_v4':
             extracted_features = end_points['PreLogitsFlatten']
-            scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-            pattern_to_exclude = ['biases', "global_step"]
         if FLAGS.model_name == 'mobilenet_v2':
             extracted_features = tf.layers.Flatten()(end_points['global_pool'])
-            scope_to_exclude = ["MobilenetV2/Logits"]
-            pattern_to_exclude = []
 
     for key, end_point in end_points.items():
         print("endpoint: {}, shape: {}".format(key, end_point.shape))
 
     # if FLAGS.predict_from_initial_weigths or helpers.is_first_run(FLAGS):
     ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-    tf.train.init_from_checkpoint(str(ws_path), {v.name.split(':')[0]: v for v in fine_tune.get_variables_to_restore(FLAGS.model_name)})
-    # # ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-    # scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(scope_to_exclude, pattern_to_exclude, ws_path))
+    # tf.train.init_from_checkpoint(str(ws_path), {v.name.split(':')[0]: v for v in fine_tune.get_variables_to_restore(FLAGS.model_name)})
+    scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(FLAGS.model_name, ws_path))
 
     predicted_indices = tf.argmax(logits, axis=-1)
     print('logits shape ', logits.shape, 'predictions shape ', probabilities.shape, 'predicted_indices shape ', predicted_indices.shape)
@@ -345,31 +338,31 @@ def main(stop_event):
 
         estimator = create_estimator(steps_per_epoch)
 
-        # train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
-        #                                             shuffle=True,
-        #                                             batch_size=FLAGS.batch_size,
-        #                                             num_epochs=FLAGS.epochs,
-        #                                             prefetch_buffer_size=FLAGS.batch_size * 3),
-        #                                         max_steps= training_set_max_steps,
-        #                                         hooks=[time_hist])
+        train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
+                                                    shuffle=True,
+                                                    batch_size=FLAGS.batch_size,
+                                                    num_epochs=FLAGS.epochs,
+                                                    prefetch_buffer_size=FLAGS.batch_size * 3),
+                                                max_steps= training_set_max_steps,
+                                                hooks=[time_hist])
 
-        # eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
-        #                                             shuffle=False,
-        #                                             batch_size=FLAGS.batch_size,
-        #                                             num_epochs=1),
-        #                                         steps=validation_set_max_steps,
-        #                                         start_delay_secs=FLAGS.eval_interval_secs,
-        #                                         throttle_secs=FLAGS.eval_interval_secs,
-        #                                         hooks=[time_hist])
+        eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
+                                                    shuffle=False,
+                                                    batch_size=FLAGS.batch_size,
+                                                    num_epochs=1),
+                                                steps=validation_set_max_steps,
+                                                start_delay_secs=FLAGS.eval_interval_secs,
+                                                throttle_secs=FLAGS.eval_interval_secs,
+                                                hooks=[time_hist])
 
-        # tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-        estimator.train(input_fn=lambda:input_fn(network_training_set,
-                                            shuffle=True,
-                                            batch_size=int(FLAGS.batch_size),
-                                            num_epochs=FLAGS.epochs,
-                                            prefetch_buffer_size=FLAGS.batch_size * 3),
-                                            max_steps=training_set_max_steps,
-                                            hooks=[time_hist])
+        tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+        # estimator.train(input_fn=lambda:input_fn(network_training_set,
+        #                                     shuffle=True,
+        #                                     batch_size=int(FLAGS.batch_size),
+        #                                     num_epochs=FLAGS.epochs,
+        #                                     prefetch_buffer_size=FLAGS.batch_size * 3),
+        #                                     max_steps=training_set_max_steps,
+        #                                     hooks=[time_hist])
 
     if not FLAGS.train and FLAGS.eval:
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
