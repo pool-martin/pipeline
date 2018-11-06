@@ -367,7 +367,7 @@ def main(stop_event):
                                             shuffle=True,
                                             batch_size=int(FLAGS.batch_size),
                                             num_epochs=FLAGS.epochs,
-                                            prefetch_buffer_size=FLAGS.batch_size * 3)
+                                            prefetch_buffer_size=FLAGS.batch_size * 3),
                                             max_steps=training_set_max_steps,
                                             hooks=[time_hist])
 
