@@ -345,24 +345,31 @@ def main(stop_event):
 
         estimator = create_estimator(steps_per_epoch)
 
-        train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
-                                                    shuffle=True,
-                                                    batch_size=FLAGS.batch_size,
-                                                    num_epochs=FLAGS.epochs,
-                                                    prefetch_buffer_size=FLAGS.batch_size * 3),
-                                                max_steps= training_set_max_steps,
-                                                hooks=[time_hist])
+        # train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
+        #                                             shuffle=True,
+        #                                             batch_size=FLAGS.batch_size,
+        #                                             num_epochs=FLAGS.epochs,
+        #                                             prefetch_buffer_size=FLAGS.batch_size * 3),
+        #                                         max_steps= training_set_max_steps,
+        #                                         hooks=[time_hist])
 
-        eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
-                                                    shuffle=False,
-                                                    batch_size=FLAGS.batch_size,
-                                                    num_epochs=1),
-                                                steps=validation_set_max_steps,
-                                                start_delay_secs=FLAGS.eval_interval_secs,
-                                                throttle_secs=FLAGS.eval_interval_secs,
-                                                hooks=[time_hist])
+        # eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
+        #                                             shuffle=False,
+        #                                             batch_size=FLAGS.batch_size,
+        #                                             num_epochs=1),
+        #                                         steps=validation_set_max_steps,
+        #                                         start_delay_secs=FLAGS.eval_interval_secs,
+        #                                         throttle_secs=FLAGS.eval_interval_secs,
+        #                                         hooks=[time_hist])
 
-        tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+        # tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+        estimator.train(input_fn=lambda:input_fn(network_training_set,
+                                            shuffle=True,
+                                            batch_size=int(FLAGS.batch_size),
+                                            num_epochs=FLAGS.epochs,
+                                            prefetch_buffer_size=FLAGS.batch_size * 3)
+                                            max_steps=training_set_max_steps,
+                                            hooks=[time_hist])
 
     if not FLAGS.train and FLAGS.eval:
         network_training_set, network_validation_set = helpers.get_splits(FLAGS)
