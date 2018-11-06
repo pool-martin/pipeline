@@ -325,7 +325,7 @@ def main(stop_event):
               FLAGS.epochs, FLAGS.num_gpus, FLAGS.batch_size, steps_per_epoch, training_set_max_steps))
 
         validation_set_length = len(network_validation_set)
-        validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+        validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size)) # * max(1, FLAGS.num_gpus)))
         print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         if FLAGS.dataset_to_memory:
