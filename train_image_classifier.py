@@ -315,30 +315,30 @@ def main(stop_event):
     time_hist = TimeHistory()
     tf.train.get_or_create_global_step()
 
+    # Getting validation and training sets
+    network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+    global training_set_length
+    training_set_length = len(network_training_set)
+    steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+    training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
+    print('training set length: {}, epochs: {}, num_gpus: {}, batch_size: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
+            FLAGS.epochs, FLAGS.num_gpus, FLAGS.batch_size, steps_per_epoch, training_set_max_steps))
+
+    validation_set_length = len(network_validation_set)
+    validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size)) # * max(1, FLAGS.num_gpus)))
+    print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+
+    if FLAGS.dataset_to_memory:
+        complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
+        global dataset_loader
+        dataset_loader = None
+        dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+        dataset_loader.start()
+        time.sleep(60)
+
     if FLAGS.train and FLAGS.eval:
-        # Getting validation and training sets
-        network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-        global training_set_length
-        training_set_length = len(network_training_set)
-        steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
-        training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
-        print('training set length: {}, epochs: {}, num_gpus: {}, batch_size: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
-              FLAGS.epochs, FLAGS.num_gpus, FLAGS.batch_size, steps_per_epoch, training_set_max_steps))
-
-        validation_set_length = len(network_validation_set)
-        validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size)) # * max(1, FLAGS.num_gpus)))
-        print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
-
-        if FLAGS.dataset_to_memory:
-            complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
-            global dataset_loader
-            dataset_loader = None
-            dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
-            dataset_loader.start()
-            time.sleep(60)
 
         estimator = create_estimator(steps_per_epoch)
-
         train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
                                                     shuffle=True,
                                                     batch_size=FLAGS.batch_size,
@@ -357,19 +357,23 @@ def main(stop_event):
                                                 hooks=[time_hist])
 
         tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
-        # estimator.train(input_fn=lambda:input_fn(network_training_set,
-        #                                     shuffle=True,
-        #                                     batch_size=int(FLAGS.batch_size),
-        #                                     num_epochs=FLAGS.epochs,
-        #                                     prefetch_buffer_size=FLAGS.batch_size * 3),
-        #                                     max_steps=training_set_max_steps,
-        #                                     hooks=[time_hist])
+
+    if FLAGS.train and not FLAGS.eval:
+
+        estimator = create_estimator(steps_per_epoch)
+        estimator.train(input_fn=lambda:input_fn(network_training_set,
+                                            shuffle=True,
+                                            batch_size=int(FLAGS.batch_size),
+                                            num_epochs=FLAGS.epochs,
+                                            prefetch_buffer_size=FLAGS.batch_size * 3),
+                                            max_steps=training_set_max_steps,
+                                            hooks=[time_hist])
 
     if not FLAGS.train and FLAGS.eval:
-        network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-        validation_set_length = len(network_validation_set)
-        validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
-        print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+        # network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+        # validation_set_length = len(network_validation_set)
+        # validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+        # print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
         estimator = create_estimator(validation_set_max_steps)
         estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
