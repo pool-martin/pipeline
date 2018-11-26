@@ -143,6 +143,10 @@ def define_flags():
     tf.app.flags.DEFINE_bool(
         'train', True,
         'Should train.')
+        
+    tf.app.flags.DEFINE_bool(
+        'after_train', True,
+        'train already happened.')
 
     tf.app.flags.DEFINE_bool(
         'eval', True,

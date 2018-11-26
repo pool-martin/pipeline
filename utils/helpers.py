@@ -21,11 +21,11 @@ def assembly_ws_checkpoint_path(FLAGS):
 
 def assembly_experiments_path(FLAGS):
     experiment_tag = FLAGS.experiment_tag
-    if not FLAGS.train and FLAGS.eval and FLAGS.predict :
+    if not FLAGS.train and not FLAGS.after_train and FLAGS.eval and FLAGS.predict :
         experiment_tag = 'eval_and_predict'
-    if not FLAGS.train and FLAGS.eval and not FLAGS.predict :
+    if not FLAGS.train and not FLAGS.after_train and FLAGS.eval and not FLAGS.predict :
         experiment_tag = 'only_eval'
-    if not FLAGS.train and not FLAGS.eval and FLAGS.predict :
+    if not FLAGS.train and not FLAGS.after_train and not FLAGS.eval and FLAGS.predict :
         experiment_tag = 'only_predict'
     return os.path.join(FLAGS.model_dir, FLAGS.model_name, '{}_{}_{}'.format(experiment_tag, FLAGS.optimizer, FLAGS.ws_checkpoint) )
 
