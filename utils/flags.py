@@ -153,6 +153,10 @@ def define_flags():
         'Should evaluate.')
 
     tf.app.flags.DEFINE_bool(
+        'eval_all', True,
+        'Should evaluate all pre trained checkpoints.')
+
+    tf.app.flags.DEFINE_bool(
         'predict', True,
         'Should predict and extract features to output_file.')
 

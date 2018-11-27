@@ -263,7 +263,7 @@ def model_fn(features, labels, mode, params=None, config=None):
         tf.summary.scalar('recall_val', eval_metric_ops['recall'])
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops, scaffold=scaffold)
 
-def create_estimator(steps_per_epoch):
+def create_estimator(steps_per_epoch, checkpoint = None):
     sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     sess_config.gpu_options.allow_growth = True #pylint: disable=E1101
 
@@ -290,7 +290,7 @@ def create_estimator(steps_per_epoch):
 
         if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
             _, _, pattern = fine_tune.get_scope_and_patterns_to_exclude(FLAGS.model_name)
-            ws = tf.estimator.WarmStartSettings(helpers.assembly_ws_checkpoint_path(FLAGS),
+            ws = tf.estimator.WarmStartSettings(checkpoint or helpers.assembly_ws_checkpoint_path(FLAGS),
                                             pattern)
         else:
             ws = None
@@ -382,6 +382,17 @@ def main(stop_event):
                                                     num_epochs=1),
                                                     steps=validation_set_max_steps,
                                                     hooks=[time_hist])
+
+    if FLAGS.eval_all:
+        checkpoints = tf.train.get_checkpoint_state(helpers.assembly_model_dir(FLAGS)).all_model_checkpoint_paths
+        for checkpoint in checkpoints:
+            estimator = create_estimator(validation_set_max_steps, checkpoint)
+            estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
+                                            shuffle=False,
+                                            batch_size=int(FLAGS.batch_size),
+                                            num_epochs=1),
+                                            steps=validation_set_max_steps,
+                                            hooks=[time_hist])
 
     if FLAGS.predict:
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
