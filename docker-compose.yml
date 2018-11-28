@@ -78,4 +78,37 @@ services:
       - ${OUTSIDE_GROUP}
     environment:
       - TFHUB_CACHE_DIR=/home/${USER}/tfhub_modules
-
+  etf:
+    userns_mode: "host"
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    image: ${USER}-etf:v1
+    mem_limit: 4096m
+    cpu_percent: 80
+    build:
+      context: .
+      dockerfile: Dockerfile.etf
+      args:
+        - OUTSIDE_USER=${USER}
+        - OUTSIDE_UID=${OUTSIDE_UID}
+        - OUTSIDE_GROUP=${OUTSIDE_GROUP}
+        - OUTSIDE_GID=${OUTSIDE_GID}
+    volumes:
+      - type: bind
+        source: /home/${USER}/repos/Exp
+        target: /Exp
+      - type: bind
+        source: /home/${USER}/repos/DL
+        target: /DL
+        read_only: true
+      - type: bind
+        source: .
+        target: /workspace
+      - type: bind
+        source: /home/${USER}/repos/container_home
+        target: /home/${USER}
+    user: ${USER}
+    group_add:
+      - ${OUTSIDE_GROUP}

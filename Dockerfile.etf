@@ -1,0 +1,13 @@
+ FROM dmoreira/sva
+
+ARG OUTSIDE_UID
+ARG OUTSIDE_USER
+ARG OUTSIDE_GROUP
+ARG OUTSIDE_GID
+
+RUN groupadd -g $OUTSIDE_GID $OUTSIDE_GROUP && \
+    useradd -r -u $OUTSIDE_UID -g $OUTSIDE_GROUP -s /bin/bash -G sudo,adm -p $(openssl passwd -1 $OUTSIDE_USER) $OUTSIDE_USER
+
+# USER OUTSIDE_USER
+
+WORKDIR /workspace
