@@ -32,7 +32,7 @@ import sklearn.preprocessing
 
 from svm_layer import utils as su
 
-os.environ['JOBLIB_TEMP_FOLDER'] = "/data/tmp"
+os.environ['JOBLIB_TEMP_FOLDER'] = "~/tmp"
 
 def read_pmsvm_data(input_training):
     ids =[]
@@ -66,7 +66,7 @@ def read_pmsvm_data(input_training):
                 value = float(column_split[1])
                 feature_dic[index] = value
             row = np.empty([1024], dtype=np.float)
-            for j in xrange(1, 1025):
+            for j in range(1, 1025):
                 value = feature_dic.get(j, 0.)
                 if np.isnan(value):
                     row[j-1] = 0
@@ -130,7 +130,7 @@ predictions_m = probability_from_logits(confidence_scores_m)
 
 outfile = open(FLAGS.output_predictions, 'w') if FLAGS.output_predictions else sys.stdout
 if FLAGS.pool_by_id=='none' :
-  for i in xrange(len(image_ids)) :
+  for i in range(len(image_ids)) :
 #    print(image_ids[i], predictions_m[i], predictions_k[i], confidence_scores_m[i], confidence_scores_k[i], sep=',', file=outfile)
     print(image_ids[i], labels[i], predictions_m[i], confidence_scores_m[i], sep=',', file=outfile)
 else :
@@ -148,7 +148,7 @@ else :
     else :
       raise ValueError('Invalid value for FLAGS.pool_by_id: %s' % FLAGS.pool_by_id)
 
-  for i in xrange(len(image_ids)) :
+  for i in range(len(image_ids)) :
     if image_ids[i]!=previous_id :
       if previous_id is not None :
         print_result()
