@@ -59,10 +59,10 @@ python results_2_etf.py --output_predictions /Exp/2kporn/experiments/i3d/finetun
 
 cd ../trackeval-2014/
 
-perl ./trackeval -error=evt,sum,src -det=det_filename.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/ground_truth/all.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/all.txt >   out-test-gt-2.txt
+perl ./trackeval -error=evt,sum,src -det=det_filename.txt /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/ground_truth/all.txt /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/all.txt >   out-test-gt-2.txt
 
 
 
 Step 3 - Analize etf
-root@b89952cdbf94:/sva-sw/sms_p7_rd_win/build# python etf_analyze.py /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/ground_truth/all.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/all.txt
+root@b89952cdbf94:/sva-sw/sms_p7_rd_win/build# python etf_analyze.py /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/ground_truth/all.txt /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/all.txt
 

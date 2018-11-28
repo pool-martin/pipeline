@@ -97,17 +97,20 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /home/${USER}/repos/Exp
+        source: /work/${USER}/Exp
         target: /Exp
       - type: bind
-        source: /home/${USER}/repos/DL
+        source: /work/bpeixoto/mediaeval
+        target: /mediaeval
+      - type: bind
+        source: /work/${USER}/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
       - type: bind
-        source: /home/${USER}/repos/container_home
+        source: /home/${USER}/container_home
         target: /home/${USER}
     user: ${USER}
     group_add:
