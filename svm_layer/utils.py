@@ -44,7 +44,7 @@ def read_pickled_data(filename) :
     labels = np.empty([num_samples], dtype=np.float)
     print("labels and features 0 created")
     features = np.empty([num_samples, feature_size], dtype=np.float)
-    for s in xrange(num_samples) :
+    for s in range(num_samples) :
         sample = pickle.load(source)
         ids.append(sample[0])
         labels[s] = sample[1]
