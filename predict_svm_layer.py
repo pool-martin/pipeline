@@ -88,6 +88,7 @@ parser.add_argument('--output_images', type=str, help='input file with the test 
 parser.add_argument('--pool_by_id', type=str, default='none', help='pool answers of contiguous identical ids: none (default), avg, max, xtrm')
 parser.add_argument('--compute_rolling_window', default=False, action='store_true', help='compute rolling_window')
 parser.add_argument('--reading_from_libsvm', default=False, action='store_true', help='reading from libsvm_format')
+parser.add_argument('--video_split_char', type=str, default='.', help='char to split video name')
 
 FLAGS = parser.parse_args()
 
@@ -266,8 +267,7 @@ try :
     #print('\n Created labels', end='', file=sys.stderr)
 
     def extract_video_name(row):
-        return row['Frame'].split('.')[0]
-#        return row['Frame'].split('_')[0]
+        return row['Frame'].split(FLAGS.video_split_char)[0]
     df['videos'] = df.apply(extract_video_name, axis=1)
     print('\n Created videos', end='', file=sys.stderr)
 

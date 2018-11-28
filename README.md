@@ -36,26 +36,33 @@ Step 3 - Train and extract features
 ######################################
 SVM
 Step 1 - Train svm_train
-python train_svm_layer.py --input_training /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/svm_training_set --output_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml_models/svm_training.model --jobs 4 --svm_method LINEAR_PRIMAL --preprocess NONE --max_iter_hyper 30
+
+mkdir /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models
+
+python train_svm_layer.py --input_training /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/svm_training_set --output_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models/svm_training.model --jobs 4 --svm_method LINEAR_PRIMAL --preprocess NONE --max_iter_hyper 30
 
 Step 2 - Predict
 
- python predict_svm_layer.py --input_model /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.models/network_train.svm  --input_test /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.features/svm_validation.feats --pool_by_id none  --output_predictions /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/svm_validation.prediction.txt --output_metrics /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/svm_validation.metrics.txt --output_images /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/svm_validation.images --compute_rolling_window
+ mkdir /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions
 
- python predict_svm_layer.py --input_model /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.models/network_train.svm  --input_test /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.features/test.feats --pool_by_id none  --output_predictions /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/test.prediction.txt --output_metrics /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/test.metrics.txt --output_images /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/test.images --compute_rolling_window
+ python predict_svm_layer.py --input_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models/svm_training.model  --input_test /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/svm_validation_set --pool_by_id none  --output_predictions /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/svm_validation.prediction.txt --output_metrics /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/svm_validation.metrics.txt --output_images /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/svm_validation.images --compute_rolling_window --video_split_char _
 
-
-Step 3 - Analize etf
-root@b89952cdbf94:/sva-sw/sms_p7_rd_win/build# python etf_analyze.py /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/ground_truth/all.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/all.txt
+ python predict_svm_layer.py --input_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models/svm_training.model  --input_test /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/test_set --pool_by_id none  --output_predictions /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/test.prediction.txt --output_metrics /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/test.metrics.txt --output_images /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/test.images --compute_rolling_window --video_split_char _
 
 --------------------------------
 Step 4 - Gerando arquivos etf e calculando metricas
 
-rm -rf /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf
+mkdir /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf
+rm -rf /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf
 
-python results_2_etf.py --output_predictions /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/test.prediction.txt --output_path /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf --fps_sampled 1 --is_3d --set_to_process test
+python results_2_etf.py --output_predictions /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/test.prediction.txt --output_path /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf --fps_sampled 1 --is_3d --set_to_process test
 
 cd ../trackeval-2014/
 
 perl ./trackeval -error=evt,sum,src -det=det_filename.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/ground_truth/all.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/all.txt >   out-test-gt-2.txt
+
+
+
+Step 3 - Analize etf
+root@b89952cdbf94:/sva-sw/sms_p7_rd_win/build# python etf_analyze.py /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/ground_truth/all.txt /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.predictions/etf/test/all.txt
 
