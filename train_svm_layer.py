@@ -33,7 +33,7 @@ import sklearn.preprocessing
 
 from svm_layer import utils as su
 
-os.environ['JOBLIB_TEMP_FOLDER'] = "/data/tmp"
+os.environ['JOBLIB_TEMP_FOLDER'] = "~/tmp"
 
 parser = argparse.ArgumentParser(prog='train_svm_layer.py', description='Train the SVM decision.')
 parser.add_argument('--svm_method', type=str, default='RBF', help='svm method to employ: RBF (default), LINEAR_DUAL, or LINEAR_PRIMAL.')

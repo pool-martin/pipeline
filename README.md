@@ -36,7 +36,7 @@ Step 3 - Train and extract features
 ######################################
 SVM
 Step 1 - Train svm_train
-python train_svm_layer.py --input_training /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.features/svm_train.feats --output_model /Exp/torch/ltc/log/2kporn/2kporn_rgb_bs25_tw1_ts1_nf16_s16/svm.models/network_train.svm --jobs 4 --svm_method LINEAR_PRIMAL --preprocess NONE --max_iter_hyper 30
+python train_svm_layer.py --input_training /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/svm_training_set --output_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml_models/svm_training.model --jobs 4 --svm_method LINEAR_PRIMAL --preprocess NONE --max_iter_hyper 30
 
 Step 2 - Predict
 
