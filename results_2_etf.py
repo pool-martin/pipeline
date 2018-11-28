@@ -45,7 +45,7 @@ def result_2_etf(df, is_3d, fps_sampled, result_row, FLAGS):
 	result_etf_list = os.path.join(output_dir, "etf_list.txt")
 
 	for index, row in df.iterrows():
-		video_name = row['videos']
+		video_name = row['videos'].decode("utf-8") 
 		result_etf = os.path.join(output_dir, video_name + ".etf")
 		
 		video_fps = os.path.join('/DL/2kporn', "video_fps", video_name + ".etf")
@@ -60,10 +60,10 @@ def result_2_etf(df, is_3d, fps_sampled, result_row, FLAGS):
 
 		#Calc Localization flag:
 		if is_3d:
-			if row['Frame'].count('_') == 2:
-				_, beg, end = row['Frame'].split('_')
+			if row['Frame'].decode("utf-8").count('_') == 2:
+				_, beg, end = row['Frame'].decode("utf-8").split('_')
 			else:
-				_, beg = row['Frame'].split('_')
+				_, beg = row['Frame'].decode("utf-8").split('_')
 				end = max([int(line.strip()) for line in open('/Exp/2kporn/splits/{}/3D/{}_fps/w_1_l_16/{}/{}.txt'.format(FLAGS.fold_to_process, fps_sampled, video_name, row['Frame']), 'r')])
 				print('end', end)
 			for i in range(int(beg), int(end)+1):
