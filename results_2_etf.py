@@ -64,7 +64,7 @@ def result_2_etf(df, is_3d, fps_sampled, result_row, FLAGS):
 				_, beg, end = row['Frame'].split('_')
 			else:
 				_, beg = row['Frame'].split('_')
-				end = max([int(line.strip()) for line in open('/Exp/2kporn/splits/{}/3D/{}_fps/w_1_l_16/{}/{}_{}_{}.txt'.format(FLAGS.fold_to_process, fps_sampled, video_name, video_name, row['previous_labels'], beg), 'r')])
+				end = max([int(line.strip()) for line in open('/Exp/2kporn/splits/{}/3D/{}_fps/w_1_l_16/{}/{}_{}_{}.txt'.format(FLAGS.fold_to_process, fps_sampled, video_name, video_name, int(row['previous_labels']), beg), 'r')])
 				print('end', end)
 			for i in range(int(beg), int(end)+1):
 				localization_flag[i] = row[result_row]
