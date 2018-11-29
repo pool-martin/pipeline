@@ -23,6 +23,7 @@ Create Splits to be used in 2D or 3D CNN models.
 
 import argparse, os, time, random, math
 from subprocess import call
+import decimal
 from utils import opencv
 
 def load_args():
@@ -51,6 +52,10 @@ def load_args():
                                     dest='snippet_width',
                                     help='time width of snippets for 3D splits in seconds.',
                                     type=int, required=False, default=5)
+    ap.add_argument('-cf', '--contiguous-frames',
+                                    dest='contiguous_frames',
+                                    help='should be contiguous frames selected.',
+                                    type=int, required=False, default=0)
     args = ap.parse_args()
     print(args)
     return args
@@ -121,14 +126,23 @@ def fit_bounds(min_init, max_end, desired_init, desired_end, args):
 
     return init_bound, end_bound
 
+def frange(x, y, jump):
+  while x < y:
+    yield x
+    x += jump
+
 def select_snippet_frames(init_bound, end_bound, fps, args):
     snippet = []
     window = end_bound - init_bound
-    step = int(math.floor(window / args.snippet_length))
-    step = step if step > 0 else 1
+
+    step = 1.0
+    if not args.contiguous_frames:
+        step = float(window / args.snippet_length)
+        step = step if step > 0 else 1.0
+
     while len(snippet) < args.snippet_length:
-        for frame in range(init_bound, end_bound, step):
-            snippet.append(frame)
+        for frame in list(frange(init_bound, end_bound, decimal.Decimal(str(step)))):
+            snippet.append(int(round(frame)))
         #lets change a bit the frames if needed to loop again by summing 1 on init_bound if possible
         init_bound = init_bound + 1 if init_bound < end_bound -1 else init_bound
     return snippet[:args.snippet_length]
@@ -171,17 +185,17 @@ def is_snippet_length_too_short(init_bound, end_bound, fps, args):
 def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args, is_test_split):
 
     should_print = False
-    if video_name in('vNonPorn000245'):
+    if video_name in('vNonPorn000002'):
         should_print = True
         print(frame_entry, frame_count, fps, frame_position, position, labels)
     min_init, max_end = define_snippet_bounds(labels, position, frame_position, fps, frame_count, 'frame', is_test_split, should_print)
-    if video_name in('vNonPorn000245'):
+    if video_name in('vNonPorn000002'):
         print('max', min_init, max_end)
     desired_init, desired_end = calc_desired_bounds(frame_position, fps, args)
-    if video_name in('vNonPorn000245'):
+    if video_name in('vNonPorn000002'):
         print('desired', desired_init, desired_end)
     init_bound, end_bound = fit_bounds(min_init, max_end, desired_init, desired_end, args)
-    if video_name in('vNonPorn000245'):
+    if video_name in('vNonPorn000002'):
         print('fit', init_bound, end_bound)
 
     #If the length of snippet is to low we will not create it
