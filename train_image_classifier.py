@@ -351,7 +351,7 @@ def main(stop_event):
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=1),
-                                                steps=validation_set_max_steps,
+                                                steps=validation_set_max_steps / 4,
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
                                                 hooks=[time_hist])

@@ -55,7 +55,7 @@ Step 4 - Gerando arquivos etf e calculando metricas
 mkdir /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf
 rm -rf /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf
 
-python results_2_etf.py --output_predictions /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/test.prediction.txt --output_path /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf --fps_sampled 1 --is_3d --set_to_process test
+python results_2_etf.py --output_predictions /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.predictions/test.prediction.txt --output_path /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf --fps_sampled 1 --is_3d --set_to_process test --column k_prob_g5
 
 cd ../trackeval-2014/
 
