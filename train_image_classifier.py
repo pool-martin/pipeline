@@ -161,7 +161,8 @@ def model_fn(features, labels, mode, params=None, config=None):
         # pattern_to_exclude = ['biases', "global_step"]
 
     if FLAGS.model_name == 'c3d':
-        probabilities, end_points = c3d.C3D(input=features['snippet'], num_classes=len(dataset_labels))
+        logits, end_points = c3d.C3D(input=features['snippet'], num_classes=len(dataset_labels))
+        probabilities = tf.nn.softmax(logits)
         extracted_features = tf.layers.Flatten()(end_points['max_pool5'])
 
     # if FLAGS.model_name == 'inception_v1':

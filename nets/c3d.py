@@ -44,8 +44,7 @@ def C3D(input, num_classes, keep_pro=0.2):
             net = slim.fully_connected(net, 4096, weights_regularizer=slim.l2_regularizer(0.0005), scope='fc7')
             end_points['fc7'] = net
             net = slim.dropout(net, keep_pro, scope='dropout2')
-            out = slim.fully_connected(net, num_classes, weights_regularizer=slim.l2_regularizer(0.0005), \
-                                       activation_fn=tf.nn.softmax, scope='out')
+            out = slim.fully_connected(net, num_classes, weights_regularizer=slim.l2_regularizer(0.0005), scope='out')
             end_points['Logits'] = out
 
             return out, end_points
