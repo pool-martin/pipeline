@@ -27,7 +27,8 @@ def C3D(input, num_classes, keep_pro=0.2):
             net = slim.max_pool3d(net, kernel_size=[2, 2, 2], stride=[2, 2, 2], padding='VALID', scope='max_pool5')
             end_points['max_pool5'] = net
 
-            net = tf.reshape(net, [-1, 512 * 4 * 4])
+            # net = tf.reshape(net, [-1, 512 * 4 * 4])
+            net = slim.flatten(net)
             net = slim.fully_connected(net, 4096, weights_regularizer=slim.l2_regularizer(0.0005), scope='fc6')
             net = slim.dropout(net, 0.3, scope='dropout1')
             net = slim.fully_connected(net, 4096, weights_regularizer=slim.l2_regularizer(0.0005), scope='fc7')
