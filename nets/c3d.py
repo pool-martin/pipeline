@@ -33,7 +33,8 @@ def C3D(input, num_classes, keep_pro=0.2):
             net = slim.repeat(net, 2, slim.conv3d, 512, scope='conv5')
             end_points['conv5'] = net
             net = tf.pad(net, paddings=[[0,0], [0,0], [1,0], [1,0], [0,0]])
-            net = slim.max_pool3d(net, kernel_size=[2, 2, 2], stride=[1, 3, 3], padding='VALID', scope='max_pool5')
+            end_points['padding'] = net
+            net = slim.max_pool3d(net, kernel_size=[1, 2, 2], stride=[1, 3, 3], padding='VALID', scope='max_pool5')
             end_points['max_pool5'] = net
 
             # net = tf.reshape(net, [-1, 512 * 7 * 7])
