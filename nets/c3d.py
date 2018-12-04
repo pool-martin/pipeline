@@ -40,13 +40,16 @@ def C3D(input, num_classes, keep_pro=0.2):
             # net = tf.reshape(net, [-1, 512 * 7 * 7])
             net = tf.layers.Flatten()(net)
             end_points['flatten'] = net
-            net = slim.fully_connected(net, 4096, weights_regularizer=slim.l2_regularizer(0.0005), scope='fc6')
+            net = tf.layers.dense(net, 4096, activation=tf.nn.relu)
+            # net =  slim.fully_connected(net, 4096, activation_fn=tf.nn.relu, scope='fc6')
             end_points['fc6'] = net
             net = slim.dropout(net, 0.3, scope='dropout1')
-            net = slim.fully_connected(net, 4096, weights_regularizer=slim.l2_regularizer(0.0005), scope='fc7')
+            # net = slim.fully_connected(net, 4096, weights_regularizer=slim.l2_regularizer(0.0005), scope='fc7')
+            net = tf.layers.dense(net, 4096, activation=tf.nn.relu)
             end_points['fc7'] = net
             net = slim.dropout(net, keep_pro, scope='dropout2')
-            out = slim.fully_connected(net, num_classes, weights_regularizer=slim.l2_regularizer(0.0005), scope='out')
+            # out = slim.fully_connected(net, num_classes, weights_regularizer=slim.l2_regularizer(0.0005), activation_fn=None, scope='out')
+            out = tf.layers.dense(net, num_classes, activation=None)
             end_points['Logits'] = out
 
             return out, end_points
