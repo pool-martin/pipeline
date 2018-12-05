@@ -92,13 +92,13 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     # height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    for _ in frame_numbers:
+    for x in frame_numbers:
 
         ret, frame_no, frame = fvs.read()
         # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
         # ret, frame = cap.read()
         if (ret == False): 
-            print('Error extracting video {} id {} frame {}'.format(video_path, frames_identificator, frame_no))
+            print('Error extracting video {} id {} frame {} index {}'.format(video_path, frames_identificator, frame_no, x))
         else:
           # unfortunately opencv uses bgr color format as default
           frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
