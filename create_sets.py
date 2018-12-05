@@ -215,11 +215,19 @@ def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_f
                 f.write("%s\n" % item)
     return True
 
+def get_frame_count(video_name, args):
+  frame_count_path = os.path.join(args.dataset_dir, 'etf_frame_count', '{}.etf'.format(video_name))
+  with open(frame_count_path, "r") as f:
+    length = int(f.read())
+
+  return length
+
 def select_video_frames(video_name, split_type, args, split_test):
     print('\n', video_name, ' ', end='')
     frames = []
     etf_file = os.path.join(args.dataset_dir, 'etf', video_name + '.etf')
-    frame_count, fps, _, _ = opencv.get_video_params(os.path.join(args.dataset_dir, 'videos', video_name + '.mp4'))
+    _, fps, _, _ = opencv.get_video_params(os.path.join(args.dataset_dir, 'videos', video_name + '.mp4'))
+    frame_count = get_frame_count(video_name, args)
     calc_duration = (frame_count * 1000)/fps
 
     labels = get_localization_labels(etf_file)

@@ -49,7 +49,7 @@ def result_2_etf(df, is_3d, fps_sampled, result_row, FLAGS):
 		result_etf = os.path.join(output_dir, video_name + ".etf")
 		
 		video_fps = os.path.join('/DL/2kporn', "video_fps", video_name + ".etf")
-		video_length = os.path.join('/DL/2kporn', 'number_of_frames_video', video_name + ".etf")
+		video_length = os.path.join('/DL/2kporn', 'etf_frame_count', video_name + ".etf")
 		#print(video_fps)
 
 		with open(video_fps, "r") as f:

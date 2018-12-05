@@ -70,7 +70,7 @@ class Unit3D(snt.AbstractModule):
     return net
 
 class InceptionI3d_v4(snt.AbstractModule):
-    """Inception-v1 I3D architecture.
+    """Inception-v4 Inflated 3D ConvNet architecture.
 
     The model is introduced in:
 
@@ -78,12 +78,12 @@ class InceptionI3d_v4(snt.AbstractModule):
     Joao Carreira, Andrew Zisserman
     https://arxiv.org/pdf/1705.07750v1.pdf.
 
-      See also the Inception architecture, introduced in:
+    See also the Inception v4 architecture, introduced in:
 
-    Going deeper with convolutions
-    Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed,
-    Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich.
-    http://arxiv.org/pdf/1409.4842v1.pdf.
+    As described in http://arxiv.org/abs/1602.07261.
+    Inception-v4, Inception-ResNet and the Impact of Residual Connections
+      on Learning
+    Christian Szegedy, Sergey Ioffe, Vincent Vanhoucke, Alex Alemi
     """
 
     # Endpoints of the model in order. During construction, all the endpoints up
@@ -117,11 +117,11 @@ class InceptionI3d_v4(snt.AbstractModule):
         'Predictions',
     )
 
-    def __init__(self, num_classes=400,
+    def __init__(self, num_classes=2,
                 final_endpoint='Logits',
                 name='inception_i3d_v4',
                 create_aux_logits=True):
-        """Initializes I3D model instance.
+        """Initializes I3D-v4 model instance.
 
         Args:
         num_classes: The number of outputs in the logit layer (default 400, which
@@ -150,10 +150,10 @@ class InceptionI3d_v4(snt.AbstractModule):
 
     def _block_inception_a(self, inputs, scope=None, is_training=True):
         """Builds Inception-A block for Inception v4 inflated network."""
-        with tf.variable_scope(scope, 'BlockInceptionA'):
+        with tf.variable_scope(scope, 'BlockInceptionA', [inputs]):
             with tf.variable_scope('Branch_0'):
                 branch_0 = Unit3D(output_channels=96, kernel_shape=[1, 1, 1],
-                                name='Conv3d_0a_1x1')(inputs, is_training=is_training)
+                                name='Conv3d_0a_1x1' )(inputs, is_training=is_training)
             with tf.variable_scope('Branch_1'):
                 branch_1 = Unit3D(output_channels=64, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0a_1x1')(inputs, is_training=is_training)
@@ -171,12 +171,12 @@ class InceptionI3d_v4(snt.AbstractModule):
                                         strides=[1, 1, 1, 1, 1], padding=snt.VALID, name='AvgPool3d_0a_3x3')
                 branch_3 = Unit3D(output_channels=96, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0b_1x1')(branch_3, is_training=is_training)
-            return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3])
+            return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3]) #TODO Confirm axis
 
 
     def _block_reduction_a(self, inputs, scope=None, is_training=True):
         """Builds Reduction-A block for Inception v4 inflated network."""
-        with tf.variable_scope(scope, 'BlockReductionAnormalizer_fn'):
+        with tf.variable_scope(scope, 'BlockReductionA'):
             with tf.variable_scope('Branch_0'):
                 branch_0 = Unit3D(output_channels=384, kernel_shape=[3, 3, 3], padding=snt.VALID,
                         stride=[2, 2, 2], name='Conv3d_1a_3x3')(inputs, is_training=is_training),
@@ -204,39 +204,27 @@ class InceptionI3d_v4(snt.AbstractModule):
             with tf.variable_scope('Branch_1'):
                 branch_1 = Unit3D(output_channels=192, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0a_1x1')(inputs, is_training=is_training)
-                branch_1 = Unit3D(output_channels=224, kernel_shape=[1, 1, 7],
-                                  name='Conv3d_0b_1x7')(branch_1, is_training=is_training)
                 branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 7, 1],
-                                  name='Conv3d_0c_1x7')(branch_1, is_training=is_training)
+                                  name='Conv3d_0b_1x7')(branch_1, is_training=is_training)
                 branch_1 = Unit3D(output_channels=256, kernel_shape=[7, 1, 1],
-                                  name='Conv3d_0d_1x7')(branch_1, is_training=is_training)
-                # branch_1 = Unit3D(output_channels=256, kernel_shape=[7, 7, 7],
-                #                 name='Conv3d_0e_7x7')(branch_1, is_training=is_training)
+                                  name='Conv3d_0c_1x7')(branch_1, is_training=is_training)
             with tf.variable_scope('Branch_2'):
                 branch_2 = Unit3D(output_channels=192, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0a_1x1')(inputs, is_training=is_training)
-                branch_2 = Unit3D(output_channels=192, kernel_shape=[1, 1, 7],
-                                  name='Conv3d_0b_1x7')(branch_2, is_training=is_training)
+                branch_2 = Unit3D(output_channels=192, kernel_shape=[7, 1, 1],
+                                  name='Conv3d_0b_7x1')(branch_2, is_training=is_training)
                 branch_2 = Unit3D(output_channels=224, kernel_shape=[1, 7, 1],
-                                  name='Conv3d_0c_7x1')(branch_2, is_training=is_training)
+                                  name='Conv3d_0c_1x7')(branch_2, is_training=is_training)
                 branch_2 = Unit3D(output_channels=224, kernel_shape=[7, 1, 1],
                                   name='Conv3d_0d_7x1')(branch_2, is_training=is_training)
-                branch_2 = Unit3D(output_channels=224, kernel_shape=[1, 1, 7],
-                                  name='Conv3d_0e_1x7')(branch_2, is_training=is_training)
                 branch_2 = Unit3D(output_channels=256, kernel_shape=[1, 7, 1],
-                                  name='Conv3d_0f_7x1')(branch_2, is_training=is_training)
-                branch_2 = Unit3D(output_channels=256, kernel_shape=[7, 1, 7],
-                                  name='Conv3d_0g_7x1')(branch_2, is_training=is_training)
-                # branch_2 = Unit3D(output_channels=256, kernel_shape=[7, 7, 7],
-                #                 name='Conv3d_0h_7x7')(branch_2, is_training=is_training)
-                # branch_2 = Unit3D(output_channels=256, kernel_shape=[7, 7, 7],
-                #                 name='Conv3d_0i_7x7')(branch_2, is_training=is_training)
+                                  name='Conv3d_0e_1x7')(branch_2, is_training=is_training)
             with tf.variable_scope('Branch_3'):
                 branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 2, 3, 3, 1], # TODO Confirm the '2'
                                         strides=[1, 1, 1, 1, 1], padding=snt.VALID, name='AvgPool3d_0a_3x3')
                 branch_3 = Unit3D(output_channels=128, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0b_1x1')(branch_3, is_training=is_training)
-            return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3])
+            return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3]) # TODO Confirm axis
 
     def _block_reduction_b(self, inputs, scope=None, is_training=True):
         """Builds Reduction-B block for Inception v4 inflated network."""
@@ -244,22 +232,18 @@ class InceptionI3d_v4(snt.AbstractModule):
             with tf.variable_scope('Branch_0'):
                 branch_0 = Unit3D(output_channels=192, kernel_shape=[1, 1, 1],
                         name='Conv3d_0a_1x1')(inputs, is_training=is_training),
-                branch_0 = Unit3D(output_channels=192, kernel_shape=[3, 3, 3], padding='VALID',
-                        name='Conv3d_0b_3x3')(branch_0, is_training=is_training),
+                branch_0 = Unit3D(output_channels=192, kernel_shape=[3, 3, 3], stride=[1, 1, 2, 2, 1] 
+                                  padding='VALID', name='Conv3d_0b_3x3')(branch_0, is_training=is_training),
 
             with tf.variable_scope('Branch_1'):
                 branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 1, 1],
                         name='Conv3d_0a_1x1')(inputs, is_training=is_training),
-                branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 1, 7],
-                        name='Conv3d_0a_1x7')(branch_1, is_training=is_training),
-                branch_1 = Unit3D(output_channels=320, kernel_shape=[1, 7, 1],
-                        name='Conv3d_0b_7x1')(branch_1, is_training=is_training),
+                branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 7, 1],
+                        name='Conv3d_0b_1x7')(branch_1, is_training=is_training),
                 branch_1 = Unit3D(output_channels=320, kernel_shape=[7, 1, 1],
                         name='Conv3d_0c_7x1')(branch_1, is_training=is_training),
-                # branch_1 = Unit3D(output_channels=320, kernel_shape=[7, 7, 7],
-                #         name='Conv3d_0d_1x1')(branch_1, is_training=is_training),
                 branch_1 = Unit3D(output_channels=320, kernel_shape=[3, 3, 3], padding='VALID',
-                        name='Conv3d_0e_3x3')(branch_1, is_training=is_training),
+                        stride=[2, 2, 2], name='Conv3d_1a_3x3')(branch_1, is_training=is_training),
 
             with tf.variable_scope('Branch_2'):
                 branch_2 = tf.nn.max_pool3d(inputs, ksize=[1, 1, 3, 3, 1], strides=[1, 1, 2, 2, 1],
@@ -278,30 +262,28 @@ class InceptionI3d_v4(snt.AbstractModule):
                 branch_1 = Unit3D(output_channels=384, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0a_1x1')(inputs, is_training=is_training)
                 branch_1 = tf.concat(axis=4, values=[
-                            Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
-                                name='Conv3d_0b_1x3')(branch_1, is_training=is_training),
                             Unit3D(output_channels=256, kernel_shape=[1, 3, 1],
-                                name='Conv3d_0c_1x3')(branch_1, is_training=is_training),
+                                name='Conv3d_0b_3x1')(branch_1, is_training=is_training),
                             Unit3D(output_channels=256, kernel_shape=[3, 1, 1],
-                                name='Conv3d_0d_1x3')(branch_1, is_training=is_training)])
+                                name='Conv3d_0c_1x3')(branch_1, is_training=is_training)])
+                            # Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
+                            #     name='Conv3d_0b_1x3')(branch_1, is_training=is_training),
             with tf.variable_scope('Branch_2'):
                 branch_2 = Unit3D(output_channels=384, kernel_shape=[1, 1, 1],
                                 name='Conv3d_0a_1x1')(inputs, is_training=is_training)
-                branch_2 = Unit3D(output_channels=448, kernel_shape=[1, 1, 3],
-                                  name='Conv3d_0b_3x3')(branch_2, is_training=is_training)
+                branch_2 = Unit3D(output_channels=448, kernel_shape=[3, 1, 1],
+                                  name='Conv3d_0b_3x1')(branch_2, is_training=is_training)
                 branch_2 = Unit3D(output_channels=512, kernel_shape=[1, 3, 1],
-                                  name='Conv3d_0c_3x3')(branch_2, is_training=is_training)
-                branch_2 = Unit3D(output_channels=512, kernel_shape=[3, 1, 1],
-                                  name='Conv3d_0d_3x3')(branch_2, is_training=is_training)
-                # branch_2 = Unit3D(output_channels=512, kernel_shape=[3, 3, 3],
-                #                 name='Conv3d_0e_7x7')(branch_2, is_training=is_training)
+                                  name='Conv3d_0c_1x3')(branch_2, is_training=is_training)
+                # branch_2 = Unit3D(output_channels=512, kernel_shape=[1, 1, 3],
+                #                   name='Conv3d_0d_3x3')(branch_2, is_training=is_training)
                 branch_2 = tf.concat(axis=4, values=[
-                            Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
-                                name='Conv3d_0b_1x3')(branch_2, is_training=is_training),
                             Unit3D(output_channels=256, kernel_shape=[1, 3, 1],
-                                name='Conv3d_0c_1x3')(branch_2, is_training=is_training),
+                                name='Conv3d_0d_1x3')(branch_2, is_training=is_training),
                             Unit3D(output_channels=256, kernel_shape=[3, 1, 1],
-                                name='Conv3d_0d_1x3')(branch_2, is_training=is_training)])
+                                name='Conv3d_0e_3x1')(branch_2, is_training=is_training),
+                            # Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
+                            #     name='Conv3d_0f_1x3')(branch_2, is_training=is_training)])
 
             with tf.variable_scope('Branch_3'):
                 branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 2, 3, 3, 1], # TODO Confirm the '2'
@@ -358,7 +340,7 @@ class InceptionI3d_v4(snt.AbstractModule):
                                             padding='VALID', name='MaxPool_0a_3x3')
             with tf.variable_scope('Branch_1'):
                 branch_1 =  Unit3D(output_channels=96, kernel_shape=[3, 3, 3], stride=[2, 2, 2],
-                                name='Conv2d_0a_3x3')(net, is_training=is_training)
+                                padding='VALID', name='Conv2d_0a_3x3')(net, is_training=is_training)
 
             net = tf.concat(axis=4, values=[branch_0, branch_1])
             if add_and_check_final('Mixed_3a', net): return net, end_points
