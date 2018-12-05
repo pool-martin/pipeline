@@ -82,7 +82,7 @@ def define_snippet_bounds(labels, position, frame_position, fps, frame_count, bo
     if is_test_split:
         should_print = False
         snippet_begin = 0
-        snippet_end = int(min(frame_count -1, int(labels[0][1][0] + labels[0][1][1]) * fps))
+        snippet_end = int(min(frame_count -1, (labels[0][1][0] + labels[0][1][1]) * fps))
         if(should_print):
             print('position', position, 'last_label_init', labels[0][1][0], 'last_label_end', labels[0][1][1], frame_position, frame_count)
             print('ZZZZZZZZZZZZZZZ', snippet_begin, snippet_end )
@@ -96,7 +96,7 @@ def define_snippet_bounds(labels, position, frame_position, fps, frame_count, bo
 
         if ('frame' in bound_unit):
             snippet_begin = int(math.floor(labels[0][1][0] * fps))
-            snippet_end = int(min(frame_count -1, int(labels[0][1][0] + labels[0][1][1]) * fps))
+            snippet_end = int(min(frame_count -1, (labels[0][1][0] + labels[0][1][1]) * fps))
             if(should_print):
                 print('222222222222222', snippet_begin, snippet_end )
         return snippet_begin, snippet_end
@@ -128,7 +128,7 @@ def fit_bounds(min_init, max_end, desired_init, desired_end, args):
 
 def frange(x, y, jump):
   while x < y:
-    yield x
+    yield int(round(x))
     x += jump
 
 def select_snippet_frames(init_bound, end_bound, fps, args):
@@ -142,7 +142,7 @@ def select_snippet_frames(init_bound, end_bound, fps, args):
 
     while len(snippet) < args.snippet_length:
         for frame in list(frange(init_bound, end_bound, decimal.Decimal(str(step)))):
-            snippet.append(int(round(frame)))
+            snippet.append(frame)
         #lets change a bit the frames if needed to loop again by summing 1 on init_bound if possible
         init_bound = init_bound + 1 if init_bound < end_bound -1 else init_bound
     return snippet[:args.snippet_length]
@@ -171,31 +171,31 @@ def is_snippet_length_too_short(init_bound, end_bound, fps, args):
     # print('snippet_length, desired_length', snippet_length, desired_length)
     # snippets fewer than 0.5 * desired length will be discarded
     if snippet_length <=0:
-        return True 
         print('*', end='')
+        return True 
     if snippet_length < 0.3 * desired_length:
         print('!', end='')
         return True
-    if snippet_length < 0.3 * args.snippet_length:
-        print('@', end='')
-        return True
+    # if snippet_length < 0.1 * args.snippet_length:
+    #     print('@', end='')
+    #     return True
     print('.', end='')
     return False
 
 def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_file, labels, frame_position, position, args, is_test_split):
 
     should_print = False
-    if video_name in('vNonPorn000002'):
+    if video_name in('vPorn001000', 'vPorn000316'):
         should_print = True
         print(frame_entry, frame_count, fps, frame_position, position, labels)
     min_init, max_end = define_snippet_bounds(labels, position, frame_position, fps, frame_count, 'frame', is_test_split, should_print)
-    if video_name in('vNonPorn000002'):
+    if video_name in('vPorn001000', 'vPorn000316'):
         print('max', min_init, max_end)
     desired_init, desired_end = calc_desired_bounds(frame_position, fps, args)
-    if video_name in('vNonPorn000002'):
+    if video_name in('vPorn001000', 'vPorn000316'):
         print('desired', desired_init, desired_end)
     init_bound, end_bound = fit_bounds(min_init, max_end, desired_init, desired_end, args)
-    if video_name in('vNonPorn000002'):
+    if video_name in('vPorn001000', 'vPorn000316'):
         print('fit', init_bound, end_bound)
 
     #If the length of snippet is to low we will not create it
@@ -228,8 +228,8 @@ def select_video_frames(video_name, split_type, args, split_test):
     # duration_difference = calc_duration - etf_duration
     # if abs(duration_difference) > 1000 and 'vPorn' in video_name: # > 2000 == 2 seconds
     #     print(video_name, '{0:0.2f} {1}'.format(abs(duration_difference), '+' if duration_difference > 0 else '-'))
-
-    for frame_position in range (0, frame_count, int(math.floor(fps * args.sample_rate)) ):
+    for frame_position in list(frange(0, frame_count, decimal.Decimal(str(fps * args.sample_rate)))):
+    # for frame_position in range (0, frame_count, int(math.floor(fps * args.sample_rate)) ):
         position = float(frame_position) / float(fps)
         localization_label = 0 if 'vNonPorn' in video_name else define_localization_label(labels, position)
         frame_entry = "{}_{}_{}".format(video_name, localization_label, frame_position)

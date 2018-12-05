@@ -73,14 +73,14 @@ def input_fn(videos_in_split,
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
 
     if num_epochs is not None and shuffle:
-        dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(len(videos_in_split), num_epochs))
+        dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(len(videos_in_split), num_epochs))
     elif shuffle:
         dataset = dataset.shuffle(len(videos_in_split))
     elif num_epochs is not None:
         dataset = dataset.repeat(num_epochs)
 
     dataset = dataset.apply(
-       tf.contrib.data.map_and_batch(map_func=_map_func,
+       tf.data.experimental.map_and_batch(map_func=_map_func,
                                      batch_size=batch_size,
                                      num_parallel_calls=int(os.cpu_count()/2) ))
     dataset = dataset.prefetch(buffer_size= 2 * FLAGS.batch_size)
@@ -351,7 +351,7 @@ def main(stop_event):
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=1),
-                                                steps=validation_set_max_steps,
+                                                steps=validation_set_max_steps / 4,
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
                                                 hooks=[time_hist])
