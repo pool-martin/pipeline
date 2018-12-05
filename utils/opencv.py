@@ -51,7 +51,7 @@ class FileVideoStream:
             #     return
 
             # add the frame to the queue
-            self.Q.put([grabbed, frame])
+            self.Q.put([grabbed, frame_no, frame])
         self.stop()
         return
 
@@ -92,15 +92,13 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
     # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     # height =  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    for frame_no in frame_numbers:
+    for _ in frame_numbers:
 
-        ret, frame = fvs.read()
+        ret, frame_no, frame = fvs.read()
         # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
         # ret, frame = cap.read()
         if (ret == False): 
-            fvs.stop()
             print('Error extracting video {} id {} frame {}'.format(video_path, frames_identificator, frame_no))
-            break
 
         # unfortunately opencv uses bgr color format as default
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
