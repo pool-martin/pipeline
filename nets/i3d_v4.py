@@ -232,7 +232,7 @@ class InceptionI3d_v4(snt.AbstractModule):
             with tf.variable_scope('Branch_0'):
                 branch_0 = Unit3D(output_channels=192, kernel_shape=[1, 1, 1],
                         name='Conv3d_0a_1x1')(inputs, is_training=is_training),
-                branch_0 = Unit3D(output_channels=192, kernel_shape=[3, 3, 3], stride=[1, 1, 2, 2, 1] 
+                branch_0 = Unit3D(output_channels=192, kernel_shape=[3, 3, 3], stride=[1, 1, 2, 2, 1], 
                                   padding='VALID', name='Conv3d_0b_3x3')(branch_0, is_training=is_training),
 
             with tf.variable_scope('Branch_1'):
@@ -278,18 +278,15 @@ class InceptionI3d_v4(snt.AbstractModule):
                 # branch_2 = Unit3D(output_channels=512, kernel_shape=[1, 1, 3],
                 #                   name='Conv3d_0d_3x3')(branch_2, is_training=is_training)
                 branch_2 = tf.concat(axis=4, values=[
-                            Unit3D(output_channels=256, kernel_shape=[1, 3, 1],
-                                name='Conv3d_0d_1x3')(branch_2, is_training=is_training),
-                            Unit3D(output_channels=256, kernel_shape=[3, 1, 1],
-                                name='Conv3d_0e_3x1')(branch_2, is_training=is_training),
+                            Unit3D(output_channels=256, kernel_shape=[1, 3, 1], name='Conv3d_0d_1x3')(branch_2, is_training=is_training),
+                            Unit3D(output_channels=256, kernel_shape=[3, 1, 1], name='Conv3d_0e_3x1')(branch_2, is_training=is_training)
+                            ])
                             # Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
                             #     name='Conv3d_0f_1x3')(branch_2, is_training=is_training)])
 
             with tf.variable_scope('Branch_3'):
-                branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 2, 3, 3, 1], # TODO Confirm the '2'
-                                        strides=[1, 1, 1, 1, 1], padding=snt.VALID, name='AvgPool3d_0a_3x3')
-                branch_3 = Unit3D(output_channels=256, kernel_shape=[1, 1, 1],
-                                name='Conv3d_0b_1x1')(branch_3, is_training=is_training)
+                branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 2, 3, 3, 1], strides=[1, 1, 1, 1, 1], padding=snt.VALID, name='AvgPool3d_0a_3x3')
+                branch_3 = Unit3D(output_channels=256, kernel_shape=[1, 1, 1], name='Conv3d_0b_1x1')(branch_3, is_training=is_training)
             return tf.concat(axis=4, values=[branch_0, branch_1, branch_2, branch_3])
 
     def _build_base(self, inputs, is_training, dropout_keep_prob=1.0):
