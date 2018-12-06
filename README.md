@@ -5,19 +5,27 @@
 Step 0 - Create fold split (outside of container since DL is readonly)
     python create_split_2kporn.py --split-number s1
 
+    checks and create correction for etf limits:
+    python check_videos_limits.py
+
 Step 1 - Create container
     save this to ~/.bashrc:
         export OUTSIDE_UID=$(id -u)
         export OUTSIDE_GROUP=$(id -ng)
         export OUTSIDE_GID=$(id -g)
 
-    if it's installed:
+    create local folders and copy data
+    - mkdir /work/$USER/DL/2kporn
+    - mkdir /work/$USER/Exp/2kporn
+    - cp -R ~/DL/2kporn/{videos, etf, folds, eft_frame_count} /work/$USER/DL/2kporn/
+
+    if docker-compose is installed:
         docker-compose up -d --scale gpu=1 gpu
-    if it's not installed:
+    if docker-compose is not installed:
         sudo bash -c "curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose"
         chmod +x ~/docker-compose
         ~/docker-compose up -d --scale gpu=1 gpu
-    if not using docker compose:
+    if not using docker-compose:
         docker image build --file ./Dockerfile.gpu --tag jp-pipeline-gpu:v1 .
         nvidia-docker run --name jp_gpu_1 -ti -v /home/jp/Exp/:/Exp/ -v /home/jp/DL/:/DL/ -v .:/workspace/ --userns=host jp-pipeline-gpu:v1 /bin/bash
 
