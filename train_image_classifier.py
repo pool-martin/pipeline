@@ -334,8 +334,8 @@ def main(stop_event):
         global dataset_loader
         dataset_loader = None
         dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
-        dataset_loader.start()
-        time.sleep(60)
+        # dataset_loader.start()
+        # time.sleep(60)
 
     if FLAGS.train and FLAGS.eval:
 
