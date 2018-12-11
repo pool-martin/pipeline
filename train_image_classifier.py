@@ -333,7 +333,7 @@ def main(stop_event):
         complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
         global dataset_loader
         dataset_loader = None
-        dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+        dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
         dataset_loader.start()
         time.sleep(60)
 
