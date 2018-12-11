@@ -4,13 +4,13 @@ import pickle
 import utils.helpers as helpers
 _PREDICTION_OUTPUT_FORMAT='%.16f'
 
-def save_extracted_features(FLAGS, set_name, set_to_extract, pred_generator):
+def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator):
 
     print('Extracting {} set'.format(set_name))
     outfile = open(helpers.assembly_extract_features_filename(FLAGS, set_name), 'wb')
 
     def save_header(feature_size):
-        num_outputs = len(set_to_extract)
+        num_outputs = len_set_to_extract
         #print('num_outputs {}\n, feature_size {} \n, FLAGS.__flags {}'.format(num_outputs, feature_size, FLAGS.__flags))
         if FLAGS.output_format=='text' :
             print(num_outputs, file=outfile)

@@ -425,7 +425,7 @@ def main(stop_event):
                                                     last_fragments=set_to_extract[1]),
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
-            save_extracted_features(FLAGS, set_name, set_to_extract, pred_generator)
+            save_extracted_features(FLAGS, set_name, len(set_to_extract[0]), pred_generator)
 
 
 
