@@ -44,3 +44,4 @@ def save_extracted_features(FLAGS, set_name, set_to_extract, pred_generator):
         s += 1
         print('}', end='\n' if (s+1) % 40 == 0 else '', file=sys.stderr, flush=True)
     print('', file=sys.stderr)
+    outfile.close()
