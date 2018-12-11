@@ -4,7 +4,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.estimator.model_fn import EstimatorSpec, ModeKeys #pylint: disable=E0611
 import tensorflow.contrib.slim as slim
-import tensorflow_hub as hub
+# import tensorflow_hub as hub
 import gc
 from threading import Event
 import time
@@ -39,7 +39,8 @@ def input_fn(videos_in_split,
              batch_size=64, 
              num_epochs=None, 
              buffer_size=4096,
-             prefetch_buffer_size=None):
+             prefetch_buffer_size=None,
+             last_fragments=None):
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
 
@@ -56,7 +57,8 @@ def input_fn(videos_in_split,
 
         if FLAGS.dataset_to_memory:
 #            global dataset_loader
-            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size,FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
+            last_fragment = last_fragments[video_name]
+            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, last_fragment], tf.float32, stateful=False, name='retrieve_snippet')
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
         else:
             snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
@@ -122,7 +124,7 @@ def keras_model():
 
     return keras_model
 
-def model_fn(features, labels, mode, params=None, config=None):
+def model_fn(features, labels, mode, config=None):
     train_op = None
     loss = None
     predictions = None
@@ -297,7 +299,6 @@ def create_estimator(steps_per_epoch, checkpoint = None):
         # ws = None
         estimator = tf.estimator.Estimator(model_fn=model_fn,
                                                 config=config,
-                                                params=None,
                                                 model_dir=config.model_dir,
                                                 warm_start_from=ws)
     else:
@@ -350,7 +351,7 @@ def main(stop_event):
         eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
-                                                    num_epochs=1),
+                                                    num_epochs=None),
                                                 steps=validation_set_max_steps / 4,
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
@@ -379,7 +380,7 @@ def main(stop_event):
         estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
                                                     batch_size=int(FLAGS.batch_size),
-                                                    num_epochs=1),
+                                                    num_epochs=None),
                                                     steps=validation_set_max_steps,
                                                     hooks=[time_hist])
 
@@ -390,7 +391,7 @@ def main(stop_event):
             estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
                                             shuffle=False,
                                             batch_size=int(FLAGS.batch_size),
-                                            num_epochs=1),
+                                            num_epochs=None),
                                             steps=validation_set_max_steps,
                                             hooks=[time_hist])
 
@@ -398,22 +399,30 @@ def main(stop_event):
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
 
         if FLAGS.dataset_to_memory:
-            complete_set = list(set([x.split('_')[0] for x in sets_to_extract]))
+            # complete_set = list(set([x.split('_')[0] for x in sets_to_extract]))
             global dataset_loader
             dataset_loader = None
             gc.collect()
-            dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
-            dataset_loader.start()
-            time.sleep(60)
+            # dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+            dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+            # dataset_loader.start()
+            # time.sleep(60)
 
 
         for set_name, set_to_extract in sets_to_extract.items():
-            steps_per_epoch = int(len(set_to_extract)/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+            print('Extracting {} set'.format(set_name))
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$")
+            print(len(set_to_extract[0])) 
+            print("##########################")
+            print(len(set_to_extract[1]))
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            steps_per_epoch = int(len(set_to_extract[0])/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
             estimator = create_estimator(steps_per_epoch)
-            pred_generator = estimator.predict( input_fn=lambda:input_fn(set_to_extract,
+            pred_generator = estimator.predict( input_fn=lambda:input_fn(set_to_extract[0],
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
-                                                    num_epochs=1),
+                                                    num_epochs=None,
+                                                    last_fragments=set_to_extract[1]),
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
             save_extracted_features(FLAGS, set_name, set_to_extract, pred_generator)

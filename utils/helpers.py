@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+import pandas as pd
 
 def assembly_sets_path(FLAGS):
     if FLAGS.force_splits_dir_path:
@@ -67,21 +68,43 @@ def get_splits(FLAGS):
 
     return network_training_set, network_validation_set
 
+def get_last_fragments(set_to_work):
+  data = pd.DataFrame({'fragment': set_to_work})
+  data.sort_values(by=['fragment'])
+
+  def extract_video_name(row):
+    return row['fragment'].split("_")[0]
+    
+  data['video'] = data.apply(extract_video_name, axis=1)
+  last_fragments = data.groupby('video').tail(1).set_index('video').T.to_dict('records')[0]
+  return last_fragments
+
+
 def get_sets_to_extract(FLAGS):
     svm_training_set = []
     svm_validation_set = []
     test_set = []
+    last_fragments_svm_training_set = {}
+    last_fragments_svm_validation_set = {}
+    last_fragments_test_set = {}
 
     with open(os.path.join(assembly_sets_path(FLAGS), 'svm_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         svm_training_set = f.read().split('\n')[:-1]
+        svm_training_set.sort()
+        last_fragments_svm_training_set = get_last_fragments(svm_training_set)
     with open(os.path.join(assembly_sets_path(FLAGS), 'svm_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         svm_validation_set = f.read().split('\n')[:-1]
+        svm_validation_set.sort()
+        last_fragments_svm_validation_set = get_last_fragments(svm_validation_set)
     with open(os.path.join(assembly_sets_path(FLAGS), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         test_set = f.read().split('\n')[:-1]
+        test_set.sort()
+        last_fragments_test_set = get_last_fragments(test_set)
 
-    return { 'svm_training_set': svm_training_set,
-             'svm_validation_set': svm_validation_set,
-             'test_set': test_set }
+
+    return { 'svm_training_set': [svm_training_set, last_fragments_svm_training_set],
+             'svm_validation_set': [svm_validation_set, last_fragments_svm_validation_set],
+             'test_set': [test_set,  last_fragments_test_set]}
 
 def get_sets_to_extract_violence(FLAGS):
     training_set = []
