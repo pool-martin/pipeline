@@ -59,7 +59,7 @@ def input_fn(videos_in_split,
             snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size,FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
         else:
-            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float16, stateful=False, name='retrieve_snippet')
+            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
             snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
             snippet.set_shape([snippet_size] + list(image_size) + [3])
 
