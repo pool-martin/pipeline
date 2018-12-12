@@ -24,7 +24,7 @@ def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator)
 
     s = 0
     for sample in pred_generator:
-        print('{', end='', file=sys.stderr, flush=True)
+        print('@#@#@#@#@#@#{', end='', file=sys.stderr, flush=True)
         snippet_id = sample['snippet_id']
         label = sample['truth_label']
         feats = sample['features']
