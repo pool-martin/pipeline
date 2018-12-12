@@ -7,6 +7,9 @@ import os
 import time
 import gc
 
+import warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+
 class VideoLoader:
     def __init__(self, path, frame_shape=None, stop_event=None):
         self.dataset = {}
@@ -45,7 +48,7 @@ class VideoLoader:
     def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, last_fragment):
 
         video = video.decode("utf-8") 
-        print('#################################### GET_VIDEO_FRAME {}'.format(video))
+        print('#################################### GET_VIDEO_FRAME {} last {}'.format(video, last_fragment.decode("utf-8")))
 
         if video not in self.dataset:
             self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict)
