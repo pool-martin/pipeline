@@ -411,7 +411,7 @@ def main(stop_event):
 
 
         for set_name, set_to_extract in sets_to_extract.items():
-            print('Extracting {} set'.format(set_name))
+            print('Will Extract {} set'.format(set_name))
             print("$$$$$$$$$$$$$$$$$$$$$$$$$$")
             print(len(set_to_extract[0])) 
             print("##########################")
@@ -427,6 +427,7 @@ def main(stop_event):
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
             save_extracted_features(FLAGS, set_name, len(set_to_extract[0]), pred_generator)
+            print('Going out of {} set'.format(set_name))
 
 
 

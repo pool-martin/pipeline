@@ -48,7 +48,7 @@ class VideoLoader:
     def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, last_fragment):
 
         video = video.decode("utf-8") 
-        print('#################################### GET_VIDEO_FRAME {} last {}'.format(video, last_fragment.decode("utf-8")))
+        print('#################################### GET_VIDEO_FRAME {} fragment {} last {}'.format(video, snippet_path.decode("utf-8"), last_fragment.decode("utf-8")))
 
         if video not in self.dataset:
             self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict)
@@ -65,6 +65,7 @@ class VideoLoader:
         fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
 
         if last_fragment.decode("utf-8") in snippet_path.decode("utf-8"):
+          print('\nLAST FRAGMENT {} last {}'.format(video, last_fragment.decode("utf-8")))
           self.dataset[video].video = None
           gc.collect()
 
