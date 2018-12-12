@@ -62,7 +62,7 @@ def input_fn(videos_in_split,
             snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, last_fragment], tf.float32, stateful=False, name='retrieve_snippet')
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
         else:
-            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
+            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float16, stateful=False, name='retrieve_snippet')
             snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
             snippet.set_shape([snippet_size] + list(image_size) + [3])
 
@@ -198,7 +198,7 @@ def model_fn(features, labels, mode, config=None):
         logits, end_points = network_fn(features['snippet'])
         probabilities = end_points['Predictions']
         if FLAGS.model_name == 'inception_v1':
-            extracted_features = tf.layers.Flatten()(end_points['Mixed_5c'])
+            extracted_features = tf.layers.Flatten()(end_points['AvgPool_0a_7x7'])
         if FLAGS.model_name == 'inception_v4':
             extracted_features = end_points['PreLogitsFlatten']
         if FLAGS.model_name == 'mobilenet_v2':

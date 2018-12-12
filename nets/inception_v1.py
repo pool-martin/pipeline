@@ -290,6 +290,7 @@ def inception_v1(inputs,
       net, end_points = inception_v1_base(inputs, scope=scope)
       with tf.variable_scope('Logits'):
         net = slim.avg_pool2d(net, [7, 7], stride=1, scope='AvgPool_0a_7x7')
+        end_points['AvgPool_0a_7x7'] = net
         net = slim.dropout(net,
                            dropout_keep_prob, scope='Dropout_0b')
         logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
