@@ -43,6 +43,7 @@ def input_fn(videos_in_split,
              last_fragments=None):
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
+    last_fragments_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(last_fragments.keys(), last_fragments.values()), -1
 
     image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
 
@@ -57,7 +58,7 @@ def input_fn(videos_in_split,
 
         if FLAGS.dataset_to_memory:
 #            global dataset_loader
-            last_fragment = last_fragments[video_name]
+            last_fragment = last_fragments_table.lookup(video_name)
             snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, last_fragment], tf.float32, stateful=False, name='retrieve_snippet')
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
         else:
@@ -308,6 +309,9 @@ def create_estimator(steps_per_epoch, checkpoint = None):
 
 def main(stop_event):
 
+    global dataset_loader
+    global training_set_length
+
     if FLAGS.gpu_to_use:
         os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.gpu_to_use
 
@@ -318,7 +322,6 @@ def main(stop_event):
 
     # Getting validation and training sets
     network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-    global training_set_length
     training_set_length = len(network_training_set)
     steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
     training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
@@ -331,7 +334,6 @@ def main(stop_event):
 
     if FLAGS.dataset_to_memory:
         complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
-        global dataset_loader
         dataset_loader = None
         dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
         # dataset_loader.start()
@@ -400,7 +402,6 @@ def main(stop_event):
 
         if FLAGS.dataset_to_memory:
             # complete_set = list(set([x.split('_')[0] for x in sets_to_extract]))
-            global dataset_loader
             dataset_loader = None
             gc.collect()
             # dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)

@@ -61,7 +61,7 @@ class VideoLoader:
 
         fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
 
-        if frames_identificator.decode("utf-8") == last_fragment.decode("utf-8"):
+        if last_fragment.decode("utf-8") in snippet_path.decode("utf-8"):
           self.dataset[video].video = None
           gc.collect()
 
