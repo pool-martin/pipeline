@@ -43,7 +43,7 @@ def input_fn(videos_in_split,
              last_fragments=None):
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
-    last_fragments_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(last_fragments.keys()), tf.constant(last_fragments.values())), -1 )
+    last_fragments_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(list(last_fragments.keys())), tf.constant(list(last_fragments.values()))), -1 )
 
     image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
 
