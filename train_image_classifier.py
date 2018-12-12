@@ -43,7 +43,7 @@ def input_fn(videos_in_split,
              last_fragments=None):
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
-    last_fragments_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(list(last_fragments.keys())), tf.constant(list(last_fragments.values()))), "not_found" )
+    # last_fragments_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(list(last_fragments.keys())), tf.constant(list(last_fragments.values()))), "not_found" )
 
     image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
 
@@ -58,8 +58,8 @@ def input_fn(videos_in_split,
 
         if FLAGS.dataset_to_memory:
 #            global dataset_loader
-            last_fragment = last_fragments_table.lookup(video_name)
-            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, last_fragment], tf.float32, stateful=False, name='retrieve_snippet')
+            # last_fragment = last_fragments_table.lookup(video_name)
+            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, last_fragments], tf.float32, stateful=False, name='retrieve_snippet')
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
         else:
             snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float16, stateful=False, name='retrieve_snippet')
