@@ -71,6 +71,7 @@ def input_fn(videos_in_split,
         snippet = tf.squeeze(snippet)
         
         snippet_id = tf.string_join( inputs=[video_name, '_', frame_info.values[2] ] )
+        # tf.print(snippet, [snippet_id, snippet], "\n\nsnippet values: \n" )
         return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(label) }, table.lookup(label))
 
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
