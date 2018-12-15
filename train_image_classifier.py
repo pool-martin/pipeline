@@ -41,11 +41,14 @@ def input_fn(videos_in_split,
              buffer_size=4096,
              prefetch_buffer_size=None,
              fragments_count=None):
+    print('1##############################################################################################################\n#####################################################################')
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
     fragments_count_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(list(fragments_count.keys())), tf.constant(list(fragments_count.values()))), -1 )
 
     image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
+    print('2##############################################################################################################\n#####################################################################')
+        # tf.print(snippet, [snippet_id, snippet], "\n\nsnippet values: \n" )
 
     def _map_func(frame_identificator):
         frame_info = tf.string_split([frame_identificator], delimiter='_')
@@ -74,6 +77,7 @@ def input_fn(videos_in_split,
         # tf.print(snippet, [snippet_id, snippet], "\n\nsnippet values: \n" )
         return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(label) }, table.lookup(label))
 
+    print('3##############################################################################################################\n#####################################################################')
     dataset = tf.data.Dataset.from_tensor_slices(videos_in_split)
 
     if num_epochs is not None and shuffle:
@@ -83,11 +87,13 @@ def input_fn(videos_in_split,
     elif num_epochs is not None:
         dataset = dataset.repeat(num_epochs)
 
+    print('4##############################################################################################################\n#####################################################################')
     dataset = dataset.apply(
        tf.data.experimental.map_and_batch(map_func=_map_func,
                                      batch_size=batch_size,
                                      num_parallel_calls=int(os.cpu_count()/2) ))
     dataset = dataset.prefetch(buffer_size= 2 * FLAGS.batch_size)
+    print('5##############################################################################################################\n#####################################################################')
     return dataset
 
 
