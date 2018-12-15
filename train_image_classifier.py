@@ -51,6 +51,7 @@ def input_fn(videos_in_split,
         # tf.print(snippet, [snippet_id, snippet], "\n\nsnippet values: \n" )
 
     def _map_func(frame_identificator):
+        tf.print(frame_identificator, [frame_identificator], "\n\frame_identificator: \n" )
         frame_info = tf.string_split([frame_identificator], delimiter='_')
         video_name = frame_info.values[0]
         label = frame_info.values[1]
@@ -58,12 +59,16 @@ def input_fn(videos_in_split,
 
         snippet_path = tf.string_join( inputs=[helpers.assembly_snippets_path(FLAGS), '/', video_name, '/', frame_identificator, '.txt' , ])
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
+        tf.print(snippet_path, [snippet_path], "\n\snippet_path: \n" )
 
         if FLAGS.dataset_to_memory:
 #            global dataset_loader
             video_fragment_count = fragments_count_table.lookup(video_name)
+            tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
             snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count, FLAGS.debug], tf.float32, stateful=False, name='retrieve_snippet')
+            # tf.print(snippet, [video_fragmesnippetnt_count], "\n\snippet: \n" )
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
+            tf.print(snippet, [snippet], "\n\snippet: \n" )
         else:
             snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
             snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
@@ -74,7 +79,7 @@ def input_fn(videos_in_split,
         snippet = tf.squeeze(snippet)
         
         snippet_id = tf.string_join( inputs=[video_name, '_', frame_info.values[2] ] )
-        # tf.print(snippet, [snippet_id, snippet], "\n\nsnippet values: \n" )
+        tf.print(snippet, [snippet_id], "\n\nsnippet values: \n" )
         return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(label) }, table.lookup(label))
 
     print('3##############################################################################################################\n#####################################################################')
