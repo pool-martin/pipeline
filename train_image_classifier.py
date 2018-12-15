@@ -67,12 +67,13 @@ def input_fn(videos_in_split,
             # tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
             snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count, FLAGS.debug], tf.float32, stateful=False, name='retrieve_snippet')
             # tf.print(snippet, [video_fragmesnippetnt_count], "\n\snippet: \n" )
-            snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
+            # snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
             # tf.print(snippet, [snippet], "\n\snippet: \n" )
         else:
             snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
-            snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
-            snippet.set_shape([snippet_size] + list(image_size) + [3])
+
+        snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
+        snippet.set_shape([snippet_size] + list(image_size) + [3])
 
         snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
