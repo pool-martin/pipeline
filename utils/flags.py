@@ -21,6 +21,8 @@ def define_flags():
         'mini_sets', False, 'use mini sets (to debug).')
     tf.app.flags.DEFINE_bool(
         'dataset_to_memory', False, 'Load dataset to memory.')
+    tf.app.flags.DEFINE_bool(
+        'debug', False, 'enable debug print.')
     
     tf.app.flags.DEFINE_string(
         'snippets_dir', '', 'The sets to be used.')

@@ -46,7 +46,7 @@ class VideoLoader:
     #     # indicate that the thread should be stopped
     #     self.stopped = True
 
-    def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, fragments_count):
+    def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, fragments_count, debug_flag):
 
         load_lock = Lock()
         sum_lock = Lock()
@@ -55,33 +55,36 @@ class VideoLoader:
 
         # everi try that cames here when video is not loaded will wait here
         if video not in self.dataset:
-            print('First fragment {} count {}'.format(video, frames_identificator))
-            with load_lock:
+            if debug_flag: print('Before the lock: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
+            try:
+                load_lock.acquire()
                 # only the first will actually load the video.
                 if video not in self.dataset:
+                    if debug_flag: print('The very first loading: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
                     self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict)
                     self.fragments[video] = 0
+                    time.sleep(1)
+            finally:
+                load_lock.release()
+
+        if debug_flag: print('After the lock: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
 
         if(split_type.decode("utf-8") == '2D'):
             frame_numbers = [frames_identificator]
         elif(split_type.decode("utf-8") == '3D'):
             with open(snippet_path.decode("utf-8"), 'r') as f:
                 frame_numbers = f.read().split('\n')[:-1]
-            # print(video_path)
-            # print( frame_numbers )
             frame_numbers = [float(number) for number in frame_numbers]
 
-        fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
-        # print(repr(fragment))
-
         with sum_lock:
+            fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
             self.fragments[video] += 1
-
+        if debug_flag: print('After take the fragment : video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
 
 
         if self.fragments[video] == fragments_count:
-          print('\nLAST FRAGMENT {} last {}'.format(video, fragments_count))
-          self.dataset[video].video = None
+          if debug_flag: print('LAST FRAGMENT: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
+          self.dataset[video] = None
           self.fragments[video] = 0
           gc.collect()
 
