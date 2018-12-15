@@ -6,9 +6,10 @@ _PREDICTION_OUTPUT_FORMAT='%.16f'
 
 def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator):
 
-    print('Extracting {} set'.format(set_name))
-    outfile = open(helpers.assembly_extract_features_filename(FLAGS, set_name), 'wb')
+  print('Extracting {} set'.format(set_name))
+  outfile = open(helpers.assembly_extract_features_filename(FLAGS, set_name), 'wb')
 
+  try:
     def save_header(feature_size):
         num_outputs = len_set_to_extract
         #print('num_outputs {}\n, feature_size {} \n, FLAGS.__flags {}'.format(num_outputs, feature_size, FLAGS.__flags))
@@ -44,4 +45,5 @@ def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator)
         s += 1
         print('}', end='\n' if (s+1) % 40 == 0 else '', file=sys.stderr, flush=True)
     print('', file=sys.stderr)
+  finally:
     outfile.close()

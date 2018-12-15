@@ -2,7 +2,7 @@ import numpy as np
 import skvideo.io
 import cv2
 from queue import Queue
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import os
 import time
 import gc
@@ -13,6 +13,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 class VideoLoader:
     def __init__(self, path, frame_shape=None, stop_event=None):
         self.dataset = {}
+        self.fragments = {}
         self.stopped = False
         self.path = path
         self.frame_shape = frame_shape
@@ -45,13 +46,21 @@ class VideoLoader:
     #     # indicate that the thread should be stopped
     #     self.stopped = True
 
-    def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, last_fragment):
+    def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, fragments_count):
 
+        load_lock = Lock()
+        sum_lock = Lock()
         video = video.decode("utf-8") 
-        print('#################################### GET_VIDEO_FRAME {} fragment {} last {}'.format(video, snippet_path.decode("utf-8"), last_fragment.decode("utf-8")))
+        # print('#################################### GET_VIDEO_FRAME {} fragment {} last {}'.format(video, snippet_path.decode("utf-8"), fragments_count))
 
+        # everi try that cames here when video is not loaded will wait here
         if video not in self.dataset:
-            self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict)
+            print('First fragment {} count {}'.format(video, frames_identificator))
+            with load_lock:
+                # only the first will actually load the video.
+                if video not in self.dataset:
+                    self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict)
+                    self.fragments[video] = 0
 
         if(split_type.decode("utf-8") == '2D'):
             frame_numbers = [frames_identificator]
@@ -63,10 +72,17 @@ class VideoLoader:
             frame_numbers = [float(number) for number in frame_numbers]
 
         fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
+        # print(repr(fragment))
 
-        if last_fragment.decode("utf-8") in snippet_path.decode("utf-8"):
-          print('\nLAST FRAGMENT {} last {}'.format(video, last_fragment.decode("utf-8")))
+        with sum_lock:
+            self.fragments[video] += 1
+
+
+
+        if self.fragments[video] == fragments_count:
+          print('\nLAST FRAGMENT {} last {}'.format(video, fragments_count))
           self.dataset[video].video = None
+          self.fragments[video] = 0
           gc.collect()
 
-        return fragment
+        return fragment.astype('float32')

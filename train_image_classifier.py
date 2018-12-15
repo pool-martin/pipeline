@@ -40,10 +40,10 @@ def input_fn(videos_in_split,
              num_epochs=None, 
              buffer_size=4096,
              prefetch_buffer_size=None,
-             last_fragments=None):
+             fragments_count=None):
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
-    # last_fragments_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(list(last_fragments.keys())), tf.constant(list(last_fragments.values()))), "not_found" )
+    fragments_count_table = tf.contrib.lookup.HashTable(  tf.contrib.lookup.KeyValueTensorInitializer(tf.constant(list(fragments_count.keys())), tf.constant(list(fragments_count.values()))), -1 )
 
     image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
 
@@ -58,11 +58,11 @@ def input_fn(videos_in_split,
 
         if FLAGS.dataset_to_memory:
 #            global dataset_loader
-            # last_fragment = last_fragments_table.lookup(video_name)
-            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, last_fragments], tf.float32, stateful=False, name='retrieve_snippet')
+            video_fragment_count = fragments_count_table.lookup(video_name)
+            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count], tf.float32, stateful=False, name='retrieve_snippet')
             snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
         else:
-            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float16, stateful=False, name='retrieve_snippet')
+            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
             snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
             snippet.set_shape([snippet_size] + list(image_size) + [3])
 
@@ -423,7 +423,7 @@ def main(stop_event):
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=None,
-                                                    last_fragments=set_to_extract[1]),
+                                                    fragments_count=set_to_extract[1]),
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
             save_extracted_features(FLAGS, set_name, len(set_to_extract[0]), pred_generator)
