@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
-RUN pip install pandas scikit-learn sk-video opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-probability-gpu wrapt # tensorflow-hub
+RUN pip install pandas scikit-learn sk-video==1.1.11 opencv-python matplotlib numpy dm-sonnet joblib keras tensorflow-probability-gpu wrapt # tensorflow-hub
 
 # USER OUTSIDE_USER
 

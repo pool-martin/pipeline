@@ -55,20 +55,20 @@ class VideoLoader:
 
         # everi try that cames here when video is not loaded will wait here
         if video not in self.dataset:
-            if debug_flag: print('Before the lock: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
+            # if debug_flag: print('Before the lock: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
             try:
                 self.load_lock.acquire()
                 # only the first will actually load the video.
                 if video not in self.dataset:
-                    if debug_flag: print('The very first loading: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
+                    if debug_flag: print('First loading: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
                     self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict) #, backend='ffmpeg', verbosity=1)
-                    if debug_flag: print('video shape {}'.format(self.dataset[video].shape))
+                    if debug_flag: print('video {} shape {}'.format(video, self.dataset[video].shape))
                     self.fragments[video] = 0
-                    time.sleep(1)
+                    # time.sleep(1)
             finally:
                 self.load_lock.release()
 
-        if debug_flag: print('After the lock: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
+        # if debug_flag: print('After the lock: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
 
         if(split_type.decode("utf-8") == '2D'):
             frame_numbers = [frames_identificator]
@@ -80,7 +80,7 @@ class VideoLoader:
         with self.sum_lock:
             fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
             self.fragments[video] += 1
-        if debug_flag: print('After take the fragment : video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
+        # if debug_flag: print('After take the fragment : video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
 
         # print('\n\n fragment raw \n{}'.format(fragment))
         if self.fragments[video] == fragments_count:
