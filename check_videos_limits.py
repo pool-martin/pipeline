@@ -118,7 +118,7 @@ def mainSKVideo():
   for video in videos:
 
     video_path = os.path.join(path, 'videos', video)
-    video = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video))) #, backend='ffmpeg', verbosity=1)
+    video = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
     skvideo_frame_count = video.shape[0]
     frame_count, fps, height, width = opencv.get_video_params(video_path)
     opencv_frame_count, real_duration = get_real_values(video_path, fps, frame_count)
