@@ -77,7 +77,7 @@ def get_real_values(video_path, fps, frame_count):
   return real_frame_count, duration
 
 
-def main():
+def mainOpenCV():
 
   path = '~/DL/2kporn'
   videos_path = os.path.join(path, 'videos')
@@ -105,5 +105,33 @@ def main():
       f.write(str(int(real_frame_count)))
 
 
+def mainSKVideo():
+  path = '/DL/2kporn'
+  videos_path = os.path.join(path, 'videos')
+
+#   real_duration_path = '~/DL/2kporn/etf_duration'
+
+  videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
+
+  for video in videos:
+
+    video_path = os.path.join(path, 'videos', video)
+    video = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video))) #, backend='ffmpeg', verbosity=1)
+    skvideo_frame_count = video.shape[0]
+    frame_count, fps, height, width = opencv.get_video_params(video_path)
+    opencv_frame_count, real_duration = get_real_values(video_path, fps, frame_count)
+
+    etf_path = os.path.join(path, 'etf', '{}.etf'.format(video.split('.')[0]))
+    etf_duration = get_etf_duration(etf_path)
+
+    frame_difference = skvideo_frame_count - opencv_frame_count
+    if(frame_difference > 0):
+      print(video, frame_difference, opencv_frame_count, skvideo_frame_count)
+
+    # real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
+    # with open(real_etf_path, 'w') as f:
+    #   f.write(str(int(real_frame_count)))
+
+
 if __name__ == '__main__':
-    main()
+    mainSKVideo()
