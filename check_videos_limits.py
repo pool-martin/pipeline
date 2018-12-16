@@ -118,8 +118,8 @@ def mainSKVideo():
   for video in videos:
 
     video_path = os.path.join(path, 'videos', video)
-    video = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
-    skvideo_frame_count = video.shape[0]
+    video_file = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
+    skvideo_frame_count = video_file.shape[0]
     frame_count, fps, height, width = opencv.get_video_params(video_path)
     opencv_frame_count, real_duration = get_real_values(video_path, fps, frame_count)
 
@@ -133,7 +133,8 @@ def mainSKVideo():
     # real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
     # with open(real_etf_path, 'w') as f:
     #   f.write(str(int(real_frame_count)))
-
+    video_file = None
+    gc.collect()
 
 if __name__ == '__main__':
     mainSKVideo()
