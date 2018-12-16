@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import pandas as pd
+import numpy
 
 def assembly_sets_path(FLAGS):
     if FLAGS.force_splits_dir_path:
@@ -57,16 +58,42 @@ def is_first_run(FLAGS):
     model_dir = assembly_model_dir(FLAGS)
     return not(os.path.exists(model_dir) and (os.path.isdir(model_dir) and os.listdir(model_dir)))
 
+def ordenate_split_set(set_to_work, FLAGS):
+    if FLAGS == 'random_on_video':
+        data = pd.DataFrame({'fragment': set_to_work})
+
+        def extract_video_name(row):
+            return row['fragment'].split("_")[0]
+            
+        def shuffle(df):
+            index = list(df.index)
+            numpy.random.shuffle(index)
+            df = df.iloc[index]
+            df.reset_index()
+            return df
+
+        data['video'] = data.apply(extract_video_name, axis=1)
+        data = shuffle(data)
+        sorted_data = data.sort_values(by=['video'])
+        dfToList = sorted_data['fragment'].tolist()
+        return dfToList
+    else:
+        return set_to_work
+
 def get_splits(FLAGS):
     network_training_set = []
     network_validation_set = []
+    fragments_count_network_training_set = {}
+    fragments_count_network_validation_set = {}
 
     with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_training_set = f.read().split('\n')[:-1]
+    fragments_count_network_training_set = get_fragments_count(network_training_set)
     with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_validation_set = f.read().split('\n')[:-1]
+    fragments_count_network_validation_set = get_fragments_count(network_validation_set)
 
-    return network_training_set, network_validation_set
+    return ordenate_split_set(network_training_set, FLAGS), fragments_count_network_training_set, ordenate_split_set(network_validation_set, FLAGS), fragments_count_network_validation_set
 
 def get_fragments_count(set_to_work):
   data = pd.DataFrame({'fragment': set_to_work})
@@ -76,7 +103,6 @@ def get_fragments_count(set_to_work):
     return row['fragment'].split("_")[0]
     
   data['video'] = data.apply(extract_video_name, axis=1)
-#   last_fragments = data.groupby('video').tail(1).set_index('video').T.to_dict('records')[0]
   fragment_count = data.set_index('video').groupby('video').count().T.to_dict('records')[0]
   return fragment_count
 

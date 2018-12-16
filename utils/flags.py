@@ -23,6 +23,8 @@ def define_flags():
         'dataset_to_memory', False, 'Load dataset to memory.')
     tf.app.flags.DEFINE_bool(
         'debug', False, 'enable debug print.')
+    tf.app.flags.DEFINE_bool(
+        'random_on_video', True, 'ordenate sets by video but randpn inside the video.')
     
     tf.app.flags.DEFINE_string(
         'snippets_dir', '', 'The sets to be used.')

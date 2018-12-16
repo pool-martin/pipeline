@@ -334,7 +334,7 @@ def main(stop_event):
     tf.train.get_or_create_global_step()
 
     # Getting validation and training sets
-    network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+    network_training_set, network_training_set_count, network_validation_set, network_validation_set_count = helpers.get_splits(FLAGS)
     training_set_length = len(network_training_set)
     steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
     training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
@@ -346,7 +346,6 @@ def main(stop_event):
     print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
     if FLAGS.dataset_to_memory:
-        complete_set = list(set([x.split('_')[0] for x in network_training_set+network_validation_set]))
         dataset_loader = None
         dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
         # dataset_loader.start()
@@ -359,15 +358,17 @@ def main(stop_event):
                                                     shuffle=True,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=FLAGS.epochs,
-                                                    prefetch_buffer_size=FLAGS.batch_size * 3),
+                                                    prefetch_buffer_size=FLAGS.batch_size * 3,
+                                                    fragments_count=network_training_set_count),
                                                 max_steps= training_set_max_steps,
                                                 hooks=[time_hist])
 
         eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
-                                                    num_epochs=None),
-                                                steps=validation_set_max_steps / 4,
+                                                    num_epochs=None,
+                                                    fragments_count=network_validation_set_count),
+                                                steps=validation_set_max_steps,
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
                                                 hooks=[time_hist])
@@ -381,7 +382,8 @@ def main(stop_event):
                                             shuffle=True,
                                             batch_size=int(FLAGS.batch_size),
                                             num_epochs=FLAGS.epochs,
-                                            prefetch_buffer_size=FLAGS.batch_size * 3),
+                                            prefetch_buffer_size=FLAGS.batch_size * 3,
+                                            fragments_count=network_training_set_count),
                                             max_steps=training_set_max_steps,
                                             hooks=[time_hist])
 
@@ -395,7 +397,8 @@ def main(stop_event):
         estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
                                                     shuffle=False,
                                                     batch_size=int(FLAGS.batch_size),
-                                                    num_epochs=None),
+                                                    num_epochs=None,
+                                                    fragments_count=network_validation_set_count),
                                                     steps=validation_set_max_steps,
                                                     hooks=[time_hist])
 
@@ -406,7 +409,8 @@ def main(stop_event):
             estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
                                             shuffle=False,
                                             batch_size=int(FLAGS.batch_size),
-                                            num_epochs=None),
+                                            num_epochs=None,
+                                            fragments_count=network_validation_set_count),
                                             steps=validation_set_max_steps,
                                             hooks=[time_hist])
 
