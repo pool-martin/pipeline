@@ -355,7 +355,7 @@ def main(stop_event):
 
         estimator = create_estimator(steps_per_epoch)
         train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
-                                                    shuffle=True,
+                                                    shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=FLAGS.epochs,
                                                     prefetch_buffer_size=FLAGS.batch_size * 3,
@@ -379,7 +379,7 @@ def main(stop_event):
 
         estimator = create_estimator(steps_per_epoch)
         estimator.train(input_fn=lambda:input_fn(network_training_set,
-                                            shuffle=True,
+                                            shuffle=False,
                                             batch_size=int(FLAGS.batch_size),
                                             num_epochs=FLAGS.epochs,
                                             prefetch_buffer_size=FLAGS.batch_size * 3,

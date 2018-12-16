@@ -60,9 +60,12 @@ class VideoLoader:
                 self.load_lock.acquire()
                 # only the first will actually load the video.
                 if video not in self.dataset:
-                    if debug_flag: print('First loading: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
+                    if debug_flag: print('\nFirst loading: video {} fragment {} count {}'.format(video, frames_identificator, fragments_count))
+                    # with open('/DL/2kporn/dimensions_video/{}.etf'.format(video), 'r') as f:
+                    #     dimensions = f.read().split('\n')[0]
+                    # self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)), height=dimensions.split('x')[0], width=dimensions.split('x')[1], outputdict=self.outputdict) #, backend='ffmpeg', verbosity=1)
                     self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict) #, backend='ffmpeg', verbosity=1)
-                    if debug_flag: print('video {} shape {}'.format(video, self.dataset[video].shape))
+                    if debug_flag: print('\nvideo {} shape {}'.format(video, self.dataset[video].shape))
                     self.fragments[video] = 0
                     # time.sleep(1)
             finally:
@@ -84,7 +87,7 @@ class VideoLoader:
 
         # print('\n\n fragment raw \n{}'.format(fragment))
         if self.fragments[video] == fragments_count:
-          if debug_flag: print('LAST FRAGMENT: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
+          if debug_flag: print('\nLAST FRAGMENT: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
           self.dataset[video] = None
           self.fragments[video] = 0
           gc.collect()
