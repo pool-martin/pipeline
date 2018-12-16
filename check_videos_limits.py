@@ -24,6 +24,8 @@ Check videos params agains real requests.
 
 from utils import opencv
 import cv2, os
+import skvideo.io
+
 from os.path import isfile, join
 
 
