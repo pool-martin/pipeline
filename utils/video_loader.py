@@ -81,6 +81,7 @@ class VideoLoader:
             frame_numbers = [float(number) for number in frame_numbers]
 
         with self.sum_lock:
+            print('take video {} shape {} frames {}'.format(video, self.dataset[video].shape, frame_numbers), flush=True)
             fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
             self.fragments[video] += 1
         # if debug_flag: print('After take the fragment : video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
