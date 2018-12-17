@@ -48,9 +48,9 @@ class VideoLoader:
     #     # indicate that the thread should be stopped
     #     self.stopped = True
 
-    def get_video_frames(self, video, frames_identificator, snippet_path, image_size, split_type, fragments_count, debug_flag):
+    def get_video_frames(self, video_name, frames_identificator, snippet_path, image_size, split_type, fragments_count, debug_flag):
 
-        video = video.decode("utf-8") 
+        video = video_name.decode("utf-8") 
         # print('#################################### GET_VIDEO_FRAME {} fragment {} last {}'.format(video, snippet_path.decode("utf-8"), fragments_count))
         if debug_flag: print('\nvideo {}'.format(video))
 
@@ -66,7 +66,7 @@ class VideoLoader:
                     #     dimensions = f.read().split('\n')[0]
                     # self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)), height=dimensions.split('x')[0], width=dimensions.split('x')[1], outputdict=self.outputdict) #, backend='ffmpeg', verbosity=1)
                     self.dataset[video] = skvideo.io.vread(os.path.join(self.path, 'videos', '{}.mp4'.format(video)),  outputdict=self.outputdict) #, backend='ffmpeg', verbosity=1)
-                    if(self.dataset.get(video, default = None) is not None):
+                    if(self.dataset.get(video, None) is not None):
                       if debug_flag: print('\nvideo {} shape {}'.format(video, self.dataset[video].shape))
                     self.fragments[video] = 0
                     # time.sleep(1)
@@ -83,14 +83,14 @@ class VideoLoader:
             frame_numbers = [float(number) for number in frame_numbers]
 
         with self.sum_lock:
-            if(self.dataset.get(video, default = None) is not None):
+            if(self.dataset.get(video, None) is not None):
               print('take video {} shape {} frames {}'.format(video, self.dataset[video].shape, frame_numbers), flush=True)
               fragment = np.take(self.dataset[video], indices=frame_numbers, axis=0)
               self.fragments[video] += 1
         # if debug_flag: print('After take the fragment : video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
 
         # print('\n\n fragment raw \n{}'.format(fragment))
-        if (self.fragments.get(video, default = None) is not None) and self.fragments[video] == fragments_count:
+        if (self.fragments.get(video, None) is not None) and self.fragments[video] == fragments_count:
           if debug_flag: print('\nLAST FRAGMENT: video {} fragment {} count {} total {}'.format(video, frames_identificator, self.fragments[video], fragments_count))
           self.dataset[video] = None
           self.fragments[video] = 0
