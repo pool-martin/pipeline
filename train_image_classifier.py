@@ -447,7 +447,6 @@ def main(stop_event):
             print('Going out of {} set'.format(set_name))
 
 
-
     total_time =  sum(time_hist.times)
     print('total time with ', FLAGS.num_gpus, 'GPUs:', total_time, 'seconds')
 
