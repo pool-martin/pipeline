@@ -112,7 +112,7 @@ def mainSKVideo():
   path = '/DL/2kporn'
   videos_path = os.path.join(path, 'videos')
 
-  real_duration_path = '~/Exp/2kporn/etf_frame_count'
+  real_duration_path = '/Exp/2kporn/etf_frame_count'
 
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
@@ -131,6 +131,7 @@ def mainSKVideo():
     # if(frame_difference > 0):
     #   print(video, frame_difference, opencv_frame_count, skvideo_frame_count)
 
+    print(video)
     real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
     with open(real_etf_path, 'w+') as f:
       f.write(str(int(skvideo_frame_count)))
