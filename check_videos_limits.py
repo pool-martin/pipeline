@@ -132,7 +132,7 @@ def mainSKVideo():
     #   print(video, frame_difference, opencv_frame_count, skvideo_frame_count)
 
     real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
-    with open(real_etf_path, 'w') as f:
+    with open(real_etf_path, 'w+') as f:
       f.write(str(int(skvideo_frame_count)))
     video_file = None
     gc.collect()
