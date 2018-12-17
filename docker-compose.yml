@@ -21,9 +21,9 @@ services:
       - type: bind
         source: /work/${USER}/Exp
         target: /Exp
-      - type: bind
-        source: /work/bpeixoto/mediaeval
-        target: /mediaeval
+#      - type: bind
+#        source: /work/bpeixoto/mediaeval
+#        target: /mediaeval
       - type: bind
         source: /work/${USER}/DL
         target: /DL
@@ -58,20 +58,17 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /home/${USER}/repos/Exp
+        source: /media/${USER}/Dados/jp-repos/Exp
         target: /Exp
       - type: bind
-        source: /home/${USER}/repos/mediaeval
-        target: /mediaeval
-      - type: bind
-        source: /home/${USER}/repos/DL
+        source: /media/${USER}/Dados/jp-repos/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
       - type: bind
-        source: /home/${USER}/repos/container_home
+        source: /media/${USER}/Dados/jp-repos/container_home
         target: /home/${USER}
     user: ${USER}
     group_add:
@@ -97,20 +94,17 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /work/${USER}/Exp
+        source: /media/${USER}/Dados/jp-repos/Exp
         target: /Exp
       - type: bind
-        source: /work/bpeixoto/mediaeval
-        target: /mediaeval
-      - type: bind
-        source: /work/${USER}/DL
+        source: /media/${USER}/Dados/jp-repos/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
       - type: bind
-        source: /home/${USER}/container_home
+        source: /media/${USER}/Dados/jp-repos/container_home
         target: /home/${USER}
     user: ${USER}
     group_add:
