@@ -95,6 +95,7 @@ class VideoLoader:
           self.dataset[video] = None
           self.fragments[video] = 0
           gc.collect()
+          self.dataset.pop(video, None)
             # print('\n\n fragment float32 \n{}'.format(fragment.astype('float32')))
 
         return fragment.astype('float32')
