@@ -18,6 +18,7 @@ Step 1 - Create container
     - mkdir /work/$USER/DL/2kporn
     - mkdir /work/$USER/Exp/2kporn
     - cp -R ~/DL/2kporn/{videos, etf, folds, eft_frame_count} /work/$USER/DL/2kporn/
+    - cp -R ~/DL/initial_weigths /work/$USER/DL/
 
     if docker-compose is installed:
         docker-compose up -d --scale gpu=1 gpu
@@ -72,5 +73,5 @@ perl ./trackeval -error=evt,sum,src -det=det_filename.txt /Exp/2kporn/experiment
 
 
 Step 3 - Analize etf
-root@b89952cdbf94:/sva-sw/sms_p7_rd_win/build# python etf_analyze.py /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/ground_truth/all.txt /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/all.txt
+root@b89952cdbf94:/sva-sw/sms_p7_rd_win/build# python etf_analyze.py /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/ground_truth/all.txt /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/etf/test/etf_list.txt
 
