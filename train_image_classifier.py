@@ -171,8 +171,8 @@ def model_fn(features, labels, mode, config=None):
     if FLAGS.model_name == 'i3d_v4':
         dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels))
         logits, end_points = dnn_model(features['snippet'], is_training=is_training)
-        for key, end_point in end_points.items():
-          print("endpoint: {}, shape: {}".format(key, end_point.shape))
+        # for key, end_point in end_points.items():
+        #   print("endpoint: {}, shape: {}".format(key, end_point.shape))
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
         # scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
