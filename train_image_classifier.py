@@ -181,7 +181,7 @@ def model_fn(features, labels, mode, config=None):
     if FLAGS.model_name == 'c3d':
         logits, end_points = c3d.C3D(input=features['snippet'], num_classes=len(dataset_labels))
         probabilities = tf.nn.softmax(logits)
-        extracted_features = tf.layers.Flatten()(end_points['max_pool5'])
+        extracted_features = end_points['fc7']
 
     # if FLAGS.model_name == 'inception_v1':
     #     logits, end_points = inception_v1.inception_v1(features['snippet'], is_training=is_training, num_classes=len(dataset_labels))
