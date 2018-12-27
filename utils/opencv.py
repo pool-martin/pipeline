@@ -110,7 +110,7 @@ def get_video_frames(video_path, frames_identificator, snippet_path, image_size,
           #norm_image = cv2.normalize(numpy_frame, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
           # numpy_frame = np.expand_dims(numpy_frame, axis=0)
-          video_frames.append(numpy_frame.astype('float16'))
+          video_frames.append(numpy_frame.astype('float32'))
 
     # cap.release()
     fvs.stop()
