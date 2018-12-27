@@ -82,10 +82,10 @@ def get_real_values(video_path, fps, frame_count):
 
 def mainOpenCV():
 
-  path = '~/DL/2kporn'
+  path = '/DL/2kporn'
   videos_path = os.path.join(path, 'videos')
 
-  real_duration_path = '~/DL/2kporn/etf_frame_count_opencv'
+  real_duration_path = '/Exp/2kporn/etf_frame_count_opencv'
 
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
