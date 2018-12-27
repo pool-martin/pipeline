@@ -56,6 +56,10 @@ def load_args():
                                     dest='contiguous_frames',
                                     help='should be contiguous frames selected.',
                                     type=int, required=False, default=0)
+    ap.add_argument('-et', '--engine-type',
+                                    dest='engine_type',
+                                    help='skvideo or opencv.',
+                                    type=str, required=False, default='skvideo')
     args = ap.parse_args()
     print(args)
     return args
@@ -216,7 +220,7 @@ def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_f
     return True
 
 def get_frame_count(video_name, args):
-  frame_count_path = os.path.join(args.dataset_dir, 'etf_frame_count', '{}.etf'.format(video_name))
+  frame_count_path = os.path.join(args.dataset_dir, 'etf_frame_count_{}'.format(args.engine_type), '{}.etf'.format(video_name))
   with open(frame_count_path, "r") as f:
     length = int(f.read())
 
@@ -258,7 +262,7 @@ def create_video_split(name_set, split_type, positive_set, negative_set, args, s
         split.extend(select_video_frames(video.strip(), split_type, args,split_test))
 
 
-    split_path = os.path.join(args.output_path, args.split_number, split_type, '{}_fps'.format(args.sample_rate), name_set + '.txt')
+    split_path = os.path.join(args.output_path, args.split_number, split_type, '{}_fps'.format(args.sample_rate), args.engine_type, name_set + '.txt')
     with open(split_path, "w") as f:
         for item in split:
                 f.write("%s\n" % item)
@@ -332,7 +336,7 @@ def create_splits(args):
         negative_test_set = f.readlines()
 
 
-    full_dir_path = os.path.join(args.output_path, args.split_number, '3D', '{}_fps'.format(args.sample_rate), 'w_{}_l_{}'.format(args.snippet_width, args.snippet_length))
+    full_dir_path = os.path.join(args.output_path, args.split_number, '3D', '{}_fps'.format(args.sample_rate), args.engine_type, 'w_{}_l_{}'.format(args.snippet_width, args.snippet_length))
     command = "mkdir -p " + full_dir_path
     print('\n', command)
     call(command, shell=True)
@@ -346,9 +350,9 @@ def create_splits(args):
 
     create_video_split('test_set', '3D', positive_test_set, negative_test_set, args, split_test=True)
     
-    sets_3d_path = os.path.join(args.output_path, args.split_number, '3D', '{}_fps'.format(args.sample_rate))
+    sets_3d_path = os.path.join(args.output_path, args.split_number, '3D', '{}_fps'.format(args.sample_rate), args.engine_type)
 
-    sets_2d_path = os.path.join(args.output_path, args.split_number, '2D', '{}_fps'.format(args.sample_rate))
+    sets_2d_path = os.path.join(args.output_path, args.split_number, '2D', '{}_fps'.format(args.sample_rate), args.engine_type)
     command = "mkdir -p " + sets_2d_path
     print('\n', command)
     call(command, shell=True)
