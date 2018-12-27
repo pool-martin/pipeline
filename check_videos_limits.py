@@ -85,7 +85,7 @@ def mainOpenCV():
   path = '~/DL/2kporn'
   videos_path = os.path.join(path, 'videos')
 
-  real_duration_path = '~/DL/2kporn/etf_duration'
+  real_duration_path = '~/DL/2kporn/etf_frame_count_opencv'
 
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
@@ -100,7 +100,7 @@ def mainOpenCV():
 
     frame_difference = frame_count - real_frame_count
     duration_difference = etf_duration - real_duration
-    if(frame_difference > 0 or frame_difference > 0):
+    if(frame_difference > 0 or duration_difference > 0):
       print(video, frame_difference, duration_difference, frame_count, etf_duration, real_frame_count, real_duration)
 
     real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
@@ -112,7 +112,7 @@ def mainSKVideo():
   path = '/DL/2kporn'
   videos_path = os.path.join(path, 'videos')
 
-  real_duration_path = '/Exp/2kporn/etf_frame_count'
+  real_duration_path = '/Exp/2kporn/etf_frame_count_skvideo'
 
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
@@ -139,4 +139,5 @@ def mainSKVideo():
     gc.collect()
 
 if __name__ == '__main__':
+    mainOpenCV()
     mainSKVideo()
