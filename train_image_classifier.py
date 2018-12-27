@@ -169,7 +169,7 @@ def model_fn(features, labels, mode, config=None):
         pattern_to_exclude = []
 
     if FLAGS.model_name == 'i3d_v4':
-        dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels))
+        dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
         logits, end_points = dnn_model(features['snippet'], is_training=is_training)
         # for key, end_point in end_points.items():
         #   print("endpoint: {}, shape: {}".format(key, end_point.shape))
