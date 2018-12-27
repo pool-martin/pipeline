@@ -34,6 +34,8 @@ def define_flags():
         'split_number', 's1', 'Split number to be used.')
     tf.app.flags.DEFINE_string(
         'split_type', '3D', 'Set type to be used.')
+    tf.app.flags.DEFINE_string(
+        'engine_type', 'skvideo', 'engine to extract frames. skvideo or opencv.')
     tf.app.flags.DEFINE_integer(
         'num_gpus', 1, 'The number of gpus that should be used')
     tf.app.flags.DEFINE_integer(
@@ -189,5 +191,9 @@ def define_flags():
     elif(tf.app.flags.FLAGS.model_name in ['inception_v1', 'inception_v4','mobilenet_v2']):
         tf.app.flags.FLAGS.split_type = '2D'
 
+    if(tf.app.flags.FLAGS.dataset_to_memory):
+        tf.app.flags.FLAGS.engine_type = 'skvideo'
+    else:
+        tf.app.flags.FLAGS.engine_type = 'opencv'
 
     return tf.app.flags.FLAGS
