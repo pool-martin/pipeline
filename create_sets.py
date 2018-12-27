@@ -209,7 +209,7 @@ def generate_snippet(video_name,frame_entry, split_type, frame_count, fps, etf_f
     frames_snippet = select_snippet_frames(init_bound, end_bound, fps, args)
     #print('$', end='', flush=True)
 
-    snippet_folder = os.path.join(args.output_path, args.split_number, split_type, '{}_fps'.format(args.sample_rate), 'w_{}_l_{}'.format(args.snippet_width, args.snippet_length), video_name)
+    snippet_folder = os.path.join(args.output_path, args.split_number, split_type, '{}_fps'.format(args.sample_rate), args.engine_type, 'w_{}_l_{}'.format(args.snippet_width, args.snippet_length), video_name)
     if not os.path.exists(snippet_folder):
             os.makedirs(snippet_folder)
 
