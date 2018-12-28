@@ -40,7 +40,8 @@ def input_fn(videos_in_split,
              num_epochs=None, 
              buffer_size=4096,
              prefetch_buffer_size=None,
-             fragments_count=None):
+             fragments_count=None,
+             dataset_in_memory=False):
     # print('1##############################################################################################################\n#####################################################################')
 
     table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
@@ -61,7 +62,7 @@ def input_fn(videos_in_split,
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
         # tf.print(snippet_path, [snippet_path], "\n\snippet_path: \n" )
 
-        if FLAGS.dataset_to_memory:
+        if dataset_in_memory:
 #            global dataset_loader
             video_fragment_count = fragments_count_table.lookup(video_name)
             # tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
@@ -347,11 +348,8 @@ def main(stop_event):
     validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size)) # * max(1, FLAGS.num_gpus)))
     print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
-    if FLAGS.dataset_to_memory:
-        dataset_loader = None
-        dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
-        # dataset_loader.start()
-        # time.sleep(60)
+    dataset_loader = None
+    dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
 
     if FLAGS.train and FLAGS.eval:
 
@@ -361,7 +359,8 @@ def main(stop_event):
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=FLAGS.epochs,
                                                     prefetch_buffer_size=FLAGS.batch_size * 3,
-                                                    fragments_count=network_training_set_count),
+                                                    fragments_count=network_training_set_count,
+                                                    dataset_in_memory=FLAGS.dataset_to_memory),
                                                 max_steps= training_set_max_steps,
                                                 hooks=[time_hist])
 
@@ -369,7 +368,8 @@ def main(stop_event):
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=None,
-                                                    fragments_count=network_validation_set_count),
+                                                    fragments_count=network_validation_set_count,
+                                                    dataset_in_memory=True),
                                                 steps=validation_set_max_steps,
                                                 start_delay_secs=FLAGS.eval_interval_secs,
                                                 throttle_secs=FLAGS.eval_interval_secs,
@@ -385,7 +385,8 @@ def main(stop_event):
                                             batch_size=int(FLAGS.batch_size),
                                             num_epochs=FLAGS.epochs,
                                             prefetch_buffer_size=FLAGS.batch_size * 3,
-                                            fragments_count=network_training_set_count),
+                                            fragments_count=network_training_set_count,
+                                            dataset_in_memory=FLAGS.dataset_to_memory),
                                             max_steps=training_set_max_steps,
                                             hooks=[time_hist])
 
@@ -400,7 +401,8 @@ def main(stop_event):
                                                     shuffle=False,
                                                     batch_size=int(FLAGS.batch_size),
                                                     num_epochs=None,
-                                                    fragments_count=network_validation_set_count),
+                                                    fragments_count=network_validation_set_count,
+                                                    dataset_in_memory=True),
                                                     steps=validation_set_max_steps,
                                                     hooks=[time_hist])
 
@@ -412,21 +414,21 @@ def main(stop_event):
                                             shuffle=False,
                                             batch_size=int(FLAGS.batch_size),
                                             num_epochs=None,
-                                            fragments_count=network_validation_set_count),
+                                            fragments_count=network_validation_set_count,
+                                            dataset_in_memory=True),
                                             steps=validation_set_max_steps,
                                             hooks=[time_hist])
 
     if FLAGS.predict:
         sets_to_extract = helpers.get_sets_to_extract(FLAGS)
 
-        if FLAGS.dataset_to_memory:
-            # complete_set = list(set([x.split('_')[0] for x in sets_to_extract]))
-            dataset_loader = None
-            gc.collect()
-            # dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
-            dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
-            # dataset_loader.start()
-            # time.sleep(60)
+        # complete_set = list(set([x.split('_')[0] for x in sets_to_extract]))
+        dataset_loader = None
+        gc.collect()
+        # dataset_loader = VideoLoader(FLAGS.dataset_dir, videos_to_load=complete_set, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+        dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+        # dataset_loader.start()
+        # time.sleep(60)
 
 
         for set_name, set_to_extract in sets_to_extract.items():
@@ -442,7 +444,8 @@ def main(stop_event):
                                                     shuffle=False,
                                                     batch_size=FLAGS.batch_size,
                                                     num_epochs=None,
-                                                    fragments_count=set_to_extract[1]),
+                                                    fragments_count=set_to_extract[1],
+                                                    dataset_in_memory=True),
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
             save_extracted_features(FLAGS, set_name, len(set_to_extract[0]), pred_generator)

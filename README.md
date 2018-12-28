@@ -25,7 +25,7 @@ Step 1 - Create container
     if docker-compose is not installed:
         sudo bash -c "curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose"
         chmod +x ~/docker-compose
-        ~/docker-compose up -d --scale gpu=1 gpu
+        ~/docker-compose up -d --build --scale gpu=2 gpu
     if not using docker-compose:
         docker image build --file ./Dockerfile.gpu --tag jp-pipeline-gpu:v1 .
         nvidia-docker run --name jp_gpu_1 -ti -v /home/jp/Exp/:/Exp/ -v /home/jp/DL/:/DL/ -v .:/workspace/ --userns=host jp-pipeline-gpu:v1 /bin/bash

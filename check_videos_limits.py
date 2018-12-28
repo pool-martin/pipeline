@@ -121,15 +121,6 @@ def mainSKVideo():
     video_path = os.path.join(path, 'videos', video)
     video_file = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
     skvideo_frame_count = video_file.shape[0]
-    # frame_count, fps, height, width = opencv.get_video_params(video_path)
-    # opencv_frame_count, real_duration = get_real_values(video_path, fps, frame_count)
-
-    # etf_path = os.path.join(path, 'etf', '{}.etf'.format(video.split('.')[0]))
-    # etf_duration = get_etf_duration(etf_path)
-
-    # frame_difference = skvideo_frame_count - opencv_frame_count
-    # if(frame_difference > 0):
-    #   print(video, frame_difference, opencv_frame_count, skvideo_frame_count)
 
     print(video)
     real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
