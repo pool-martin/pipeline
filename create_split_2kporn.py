@@ -23,7 +23,6 @@ Create Splits to be used in 2D or 3D CNN models.
 
 import argparse, os, time, random, math
 from subprocess import call
-from utils import opencv
 
 def load_args():
     ap = argparse.ArgumentParser(description='Create Splits to be used in 2D or 3D CNN models.')
