@@ -29,11 +29,11 @@ def load_args():
     ap.add_argument('-d', '--dataset-dir',
                                     dest='dataset_dir',
                                     help='path to dataset files.',
-                                    type=str, required=False, default='~/DL/2kporn/')
+                                    type=str, required=False, default='/home/jp/DL/2kporn/')
     ap.add_argument('-o', '--output-path',
                                     dest='output_path',
                                     help='path to output the extracted frames.',
-                                    type=str, required=False, default='~/DL/2kporn/folds/')
+                                    type=str, required=False, default='/home/jp/DL/2kporn/folds/')
     ap.add_argument('-s', '--split-number',
                                     dest='split_number',
                                     help='split to be created.',
