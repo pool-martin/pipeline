@@ -121,7 +121,7 @@ def create_splits(args):
     positive_network_training_set = positive_content
     negative_network_training_set = negative_content
 
-    full_dir_path = os.path.join(args.output_path, args.split_number, 'videos')
+    full_dir_path = os.path.join(args.output_path, args.split_number)
     command = "mkdir -p " + full_dir_path
     print(command)
     call(command, shell=True)
