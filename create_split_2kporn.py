@@ -58,9 +58,9 @@ def create_splits(args):
     negative_svm_training_set = []
 
     #collecting all split1 videos
-    with open(os.path.join(args.dataset_dir, 'folds/s1_positive_training.txt')) as f:
+    with open(os.path.join(args.dataset_dir, 'folds/{}_positive_training.txt'.format(args.split_number))) as f:
             positive_content = f.readlines()
-    with open(os.path.join(args.dataset_dir,'folds/s1_negative_training.txt')) as f:
+    with open(os.path.join(args.dataset_dir,'folds/{}_negative_training.txt'.format(args.split_number))) as f:
             negative_content = f.readlines()
 
     positive_folder_qty = len(positive_content) 
