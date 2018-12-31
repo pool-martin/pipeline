@@ -3,18 +3,24 @@ import tensorflow as tf
 import pandas as pd
 import numpy
 
-def assembly_sets_path(FLAGS):
+def assembly_sets_path(FLAGS, operation):
     if FLAGS.force_splits_dir_path:
         sets_path = FLAGS.sets_dir
     else:
-        sets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), FLAGS.engine_type )
+        engine = 'skvideo'
+        if operation == 'training':
+            engine = FLAGS.engine_type
+        sets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), engine )
     return sets_path
 
-def assembly_snippets_path(FLAGS):
+def assembly_snippets_path(FLAGS, dataset_in_memory):
     if FLAGS.force_splits_dir_path:
         snippets_path = FLAGS.snippets_dir
     else:
-        snippets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), FLAGS.engine_type, 'w_{}_l_{}'.format(FLAGS.snippet_width, FLAGS.snippet_size) )
+        engine = 'skvideo'
+        if not dataset_in_memory:
+            engine = FLAGS.engine_type
+        snippets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), engine, 'w_{}_l_{}'.format(FLAGS.snippet_width, FLAGS.snippet_size) )
     return snippets_path
 
 def assembly_ws_checkpoint_path(FLAGS):
@@ -86,10 +92,10 @@ def get_splits(FLAGS):
     fragments_count_network_training_set = {}
     fragments_count_network_validation_set = {}
 
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'training'), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_training_set = f.read().split('\n')[:-1]
     fragments_count_network_training_set = get_fragments_count(network_training_set)
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'validation'), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_validation_set = f.read().split('\n')[:-1]
     fragments_count_network_validation_set = get_fragments_count(network_validation_set)
 
@@ -115,15 +121,15 @@ def get_sets_to_extract(FLAGS):
     fragments_count_svm_validation_set = {}
     fragments_count_test_set = {}
 
-    with open(os.path.join(assembly_sets_path(FLAGS), 'svm_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'extract'), 'svm_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         svm_training_set = f.read().split('\n')[:-1]
         svm_training_set.sort()
         fragments_count_svm_training_set = get_fragments_count(svm_training_set)
-    with open(os.path.join(assembly_sets_path(FLAGS), 'svm_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'extract'), 'svm_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         svm_validation_set = f.read().split('\n')[:-1]
         svm_validation_set.sort()
         fragments_count_svm_validation_set = get_fragments_count(svm_validation_set)
-    with open(os.path.join(assembly_sets_path(FLAGS), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'extract'), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         test_set = f.read().split('\n')[:-1]
         test_set.sort()
         fragments_count_test_set = get_fragments_count(test_set)
@@ -138,11 +144,11 @@ def get_sets_to_extract_violence(FLAGS):
     validation_set = []
     test_set = []
 
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'extract'), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         training_set = f.read().split('\n')[:-1]
-    with open(os.path.join(assembly_sets_path(FLAGS), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'extract'), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         validation_set = f.read().split('\n')[:-1]
-    with open(os.path.join(assembly_sets_path(FLAGS), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
+    with open(os.path.join(assembly_sets_path(FLAGS, 'extract'), 'test_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         test_set = f.read().split('\n')[:-1]
 
     return { 'train': training_set,

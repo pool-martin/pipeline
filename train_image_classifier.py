@@ -58,7 +58,7 @@ def input_fn(videos_in_split,
         label = frame_info.values[1]
         video_path = tf.string_join( inputs=[os.path.join(FLAGS.dataset_dir, 'videos'), '/' , video_name, '.mp4'])
 
-        snippet_path = tf.string_join( inputs=[helpers.assembly_snippets_path(FLAGS), '/', video_name, '/', frame_identificator, '.txt' , ])
+        snippet_path = tf.string_join( inputs=[helpers.assembly_snippets_path(FLAGS, dataset_in_memory), '/', video_name, '/', frame_identificator, '.txt' , ])
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
         # tf.print(snippet_path, [snippet_path], "\n\snippet_path: \n" )
 

@@ -34,7 +34,7 @@ Step 2 - Create sets (network_training, network_validation, svm_training, svm_va
     # sample-rate unit = fps
     # sample-length unit = number frames
     # sample-width unit = seconds
-    python create_sets.py --split-number s1 --sample-rate 1 --snippet-length 16 --snippet-width 1
+    python create_sets.py --sample-rate 1 --snippet-length 16 --snippet-width 1 --engine-type opencv --split-number s1
 
 Step 3 - Extract features from imagenet/initial weigths
     python train_image_classifier.py --model_name i3d --gpu_to_use 0,1 --num_gpus 2 --batch_size 2 --train=0 --eval=0 --predict=1

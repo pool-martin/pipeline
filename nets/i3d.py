@@ -458,8 +458,9 @@ class InceptionI3d(snt.AbstractModule):
 
     end_point = 'Logits'
     with tf.variable_scope(end_point):
-      net = tf.nn.avg_pool3d(net, ksize=[1, 2, 7, 7, 1],
-                             strides=[1, 1, 1, 1, 1], padding=snt.VALID)
+    #   net = tf.nn.avg_pool3d(net, ksize=[1, 2, 7, 7, 1],
+    #                          strides=[1, 1, 1, 1, 1], padding=snt.VALID)
+      net = tf.reduce_mean(net, [1, 2, 3], keepdims=True, name='global_pool')
       net = tf.nn.dropout(net, dropout_keep_prob)
       logits = Unit3D(output_channels=self._num_classes,
                       kernel_shape=[1, 1, 1],
