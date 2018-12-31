@@ -157,17 +157,17 @@ def model_fn(features, labels, mode, config=None):
             probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
             logits = end_points['Logits']
 
-            extract_end_point = end_points['Mixed_5c']
+            # extract_end_point = end_points['Mixed_5c']
 
-            kernel_size = extract_end_point.get_shape()[1:4]
-            net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 2, 7, 7, 1],
-                            strides=[1, 1, 1, 1, 1], padding='VALID')
-            end_points['global_pool'] = net
+            # kernel_size = extract_end_point.get_shape()[1:4]
+            # net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 2, 7, 7, 1],
+            #                 strides=[1, 1, 1, 1, 1], padding='VALID')
+            # end_points['global_pool'] = net
 
         end_points['extracted_features'] = tf.layers.Flatten()(end_points['global_pool'])
         extracted_features = end_points['extracted_features']
-        scope_to_exclude = ["RGB/inception_i3d/Logits"]
-        pattern_to_exclude = []
+        # scope_to_exclude = ["RGB/inception_i3d/Logits"]
+        # pattern_to_exclude = []
 
     if FLAGS.model_name == 'i3d_v4':
         dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
