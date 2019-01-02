@@ -40,6 +40,10 @@ def get_scope_and_patterns_to_exclude(model_name):
         scopes_to_exclude = ["RGB/inception_i3d/Logits"]
         pattern_to_exclude = ["global_step"]
         pattern_to_restore = ".*inception_i3d/[C|M].*"
+    elif model_name == 'i3d_v4':
+        scopes_to_exclude = []
+        pattern_to_exclude = []
+        pattern_to_restore = ".*InceptionV4/[C|M].*"
     return scopes_to_exclude, pattern_to_exclude, pattern_to_restore
 
 def get_variables_to_restore(model_name):
