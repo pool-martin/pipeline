@@ -12,7 +12,7 @@ import time
 
 import numpy as np
 
-from nets import i3d, i3d_v4, c3d
+from nets import i3d, i3d_v4_slim, c3d
 from nets import nets_factory
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
@@ -170,14 +170,14 @@ def model_fn(features, labels, mode, config=None):
         # pattern_to_exclude = []
 
     if FLAGS.model_name == 'i3d_v4':
-        dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
-        logits, end_points = dnn_model(features['snippet'], is_training=is_training)
+        dnn_model = i3d_v4_slim.InceptionV4(num_classes=len(dataset_labels), create_aux_logits=False)
+        logits, end_points = dnn_model._build(features['snippet'], is_training=is_training)
         # for key, end_point in end_points.items():
         #   print("endpoint: {}, shape: {}".format(key, end_point.shape))
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
-        # scope_to_exclude = ["InceptionV4/Logits", "InceptionV4/AuxLogits"]
-        # pattern_to_exclude = ['biases', "global_step"]
+        ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
+        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(FLAGS.model_name, ws_path))
 
     if FLAGS.model_name == 'c3d':
         logits, end_points = c3d.C3D(input=features['snippet'], num_classes=len(dataset_labels))
