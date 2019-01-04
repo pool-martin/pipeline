@@ -240,8 +240,10 @@ class InceptionV4:
             with tf.variable_scope('Branch_0'):
                 branch_0 = Unit3D(output_channels=192, kernel_shape=[1, 1, 1],
                         name='Conv2d_0a_1x1')._build(inputs, is_training=is_training)
-                branch_0 = Unit3D(output_channels=192, kernel_shape=[3, 3, 3], stride=[2, 2, 2], 
-                                  padding='SAME', name='Conv2d_0b_3x3')._build(branch_0, is_training=is_training)
+                branch_0 = Unit3D(output_channels=192, kernel_shape=[1, 3, 3], stride=[1, 2, 2], 
+                                  padding='SAME', name='Conv2d_1a_3x3')._build(branch_0, is_training=is_training)
+                branch_0 = Unit3D(output_channels=192, kernel_shape=[3, 1, 1], stride=[2, 1, 1], 
+                                  padding='SAME', name='Conv3d_0c_3x1x1')._build(branch_0, is_training=is_training)
 
             with tf.variable_scope('Branch_1'):
                 branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 1, 1],
@@ -363,7 +365,7 @@ class InceptionV4:
                     branch_1 =  Unit3D(output_channels=64, kernel_shape=[1, 1, 1], name='Conv2d_0a_1x1')._build(net, is_training=is_training)
                     branch_1 =  Unit3D(output_channels=64, kernel_shape=[1, 1, 7], name='Conv2d_0b_1x7')._build(branch_1, is_training=is_training)
                     branch_1 =  Unit3D(output_channels=64, kernel_shape=[1, 7, 1], name='Conv2d_0c_7x1')._build(branch_1, is_training=is_training)
-                    branch_1 =  Unit3D(output_channels=64, kernel_shape=[7, 1, 1], name='Conv2d_0d_7x1')._build(branch_1, is_training=is_training)
+                    branch_1 =  Unit3D(output_channels=64, kernel_shape=[7, 1, 1], name='Conv3d_0d_7x1x1')._build(branch_1, is_training=is_training)
                     branch_1 =  Unit3D(output_channels=96, kernel_shape=[3, 3, 3], name='Conv2d_1a_3x3')._build(branch_1, is_training=is_training)
 
                 net = tf.concat(axis=4, values=[branch_0, branch_1])
