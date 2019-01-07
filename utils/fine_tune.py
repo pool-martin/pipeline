@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 import tensorflow as tf
 slim = tf.contrib.slim
+import os
+import numpy as np
 
 def init_weights(model_name, path):
     if path == None:
@@ -52,3 +54,37 @@ def get_variables_to_restore(model_name):
     for pattern in patterns_to_exclude:
         variables_to_restore = [v for v in variables_to_restore if pattern not in v.name ]
     return variables_to_restore
+
+
+# https://github.com/aponamarev/TF_Object_Det/blob/master/LoadVar_from_exisitng_checkpoint.ipynb
+
+# https://stackoverflow.com/questions/17394882/add-dimensions-to-a-numpy-array
+# numpy expand dims
+
+# https://stackoverflow.com/questions/39137597/how-to-restore-variables-using-checkpointreader-in-tensorflow
+
+# https://stackoverflow.com/questions/48138041/modifying-shape-of-tensor-in-tensorflow-checkpoint
+
+# https://www.tensorflow.org/api_docs/python/tf/contrib/framework/assign_from_values_fn
+
+def assembly_3d_checkpoint(model_name, path):
+    checkpoint = {}
+    assert os.path.exists(path), "Provided incorrect path to the file. {} doesn't exist".format(path)
+    reader = tf.train.NewCheckpointReader(path)
+    variables_to_restore = get_variables_to_restore(model_name)
+    var_shapes = reader.get_variable_to_shape_map()
+
+    for variable in variables_to_restore:
+        if(reader.has_tensor(variable.name)):
+            current_value = reader.get_tensor(variable.name)
+            target_shape = variable.shape
+            if (len(var_shapes[variable.name]) == 1 + len(target_shape) \
+            and (var_shapes[variable.name][0] + target_shape[1]) \
+            and (var_shapes[variable.name][1] + target_shape[2]) \
+            and (var_shapes[variable.name][2] + target_shape[3])):
+                target_value = np.empty((480, 640, 3, 100))
+
+                for k in xrange(target_shape[0]):
+                    target_value[k,:,:,:] = current_value
+            checkpoint[variable.name] = target_value
+    return checkpoint
