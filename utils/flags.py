@@ -196,4 +196,8 @@ def define_flags():
     else:
         tf.app.flags.FLAGS.engine_type = 'opencv'
 
+    tf.app.flags.DEFINE_bool(
+        'sonnet', False,
+        'Is sonnet.')
+
     return tf.app.flags.FLAGS
