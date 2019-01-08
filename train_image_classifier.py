@@ -169,7 +169,7 @@ def model_fn(features, labels, mode, config=None):
         # scope_to_exclude = ["RGB/inception_i3d/Logits"]
         # pattern_to_exclude = []
 
-    if FLAGS.model_name == 'i3d_v4' and not FLAGS.sonnet:
+    if FLAGS.model_name == 'i3d_v4' and not FLAGS.is_sonnet:
         dnn_model = i3d_v4_slim.InceptionV4(num_classes=len(dataset_labels), create_aux_logits=False)
         logits, end_points = dnn_model._build(features['snippet'], is_training=is_training)
         # for key, end_point in end_points.items():
@@ -179,7 +179,7 @@ def model_fn(features, labels, mode, config=None):
         ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
         scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(FLAGS.model_name, ws_path))
 
-    if FLAGS.model_name == 'i3d_v4' and FLAGS.sonnet:
+    if FLAGS.model_name == 'i3d_v4' and FLAGS.is_sonnet:
         dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels))
         logits, end_points = dnn_model(features['snippet'], is_training=is_training)
         probabilities = end_points['Predictions']

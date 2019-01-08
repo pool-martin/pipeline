@@ -186,6 +186,10 @@ def define_flags():
     tf.app.flags.DEFINE_integer(
         'image_channels', 3, 'channels of the entry images.')
 
+    tf.app.flags.DEFINE_bool(
+        'is_sonnet', False,
+        'Is sonnet.')
+
     if(tf.app.flags.FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d']):
         tf.app.flags.FLAGS.split_type = '3D'
     elif(tf.app.flags.FLAGS.model_name in ['inception_v1', 'inception_v4','mobilenet_v2']):
@@ -195,9 +199,5 @@ def define_flags():
         tf.app.flags.FLAGS.engine_type = 'skvideo'
     else:
         tf.app.flags.FLAGS.engine_type = 'opencv'
-
-    tf.app.flags.DEFINE_bool(
-        'sonnet', False,
-        'Is sonnet.')
 
     return tf.app.flags.FLAGS
