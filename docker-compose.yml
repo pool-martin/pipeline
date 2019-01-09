@@ -58,17 +58,17 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /media/${USER}/Dados/jp-repos/Exp
+        source: /home/${USER}/repos/Exp
         target: /Exp
       - type: bind
-        source: /media/${USER}/Dados/jp-repos/DL
+        source: /home/${USER}/repos/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
       - type: bind
-        source: /media/${USER}/Dados/jp-repos/container_home
+        source: /home/${USER}/repos/container_home
         target: /home/${USER}
     user: ${USER}
     group_add:
@@ -94,17 +94,17 @@ services:
         - OUTSIDE_GID=${OUTSIDE_GID}
     volumes:
       - type: bind
-        source: /media/${USER}/Dados/jp-repos/Exp
+        source: /work/${USER}/Exp
         target: /Exp
       - type: bind
-        source: /media/${USER}/Dados/jp-repos/DL
+        source: /work/${USER}/DL
         target: /DL
         read_only: true
       - type: bind
         source: .
         target: /workspace
       - type: bind
-        source: /media/${USER}/Dados/jp-repos/container_home
+        source: /work/${USER}/container_home
         target: /home/${USER}
     user: ${USER}
     group_add:

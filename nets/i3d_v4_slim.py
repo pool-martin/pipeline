@@ -212,7 +212,7 @@ class InceptionV4:
             with tf.variable_scope('Branch_1'):
                 branch_1 = Unit3D(output_channels=192, kernel_shape=[1, 1, 1],
                                 name='Conv2d_0a_1x1')._build(inputs, is_training=is_training)
-                branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 1, 7],
+                branch_1 = Unit3D(output_channels=224, kernel_shape=[1, 1, 7],
                                   name='Conv2d_0b_1x7')._build(branch_1, is_training=is_training)
                 branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 7, 1],
                                   name='Conv2d_0c_7x1')._build(branch_1, is_training=is_training)
@@ -225,7 +225,7 @@ class InceptionV4:
                                   name='Conv2d_0c_1x7')._build(branch_2, is_training=is_training)
                 branch_2 = Unit3D(output_channels=224, kernel_shape=[1, 7, 1],
                                   name='Conv2d_0d_7x1')._build(branch_2, is_training=is_training)
-                branch_2 = Unit3D(output_channels=256, kernel_shape=[1, 7, 1],
+                branch_2 = Unit3D(output_channels=256, kernel_shape=[1, 1, 7],
                                   name='Conv2d_0e_1x7')._build(branch_2, is_training=is_training)
             with tf.variable_scope('Branch_3'):
                 branch_3 = tf.nn.avg_pool3d(inputs, ksize=[1, 1, 3, 3, 1],
@@ -248,9 +248,9 @@ class InceptionV4:
             with tf.variable_scope('Branch_1'):
                 branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 1, 1],
                         name='Conv2d_0a_1x1')._build(inputs, is_training=is_training)
-                branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 7, 1],
+                branch_1 = Unit3D(output_channels=256, kernel_shape=[1, 1, 7],
                         name='Conv2d_0b_1x7')._build(branch_1, is_training=is_training)
-                branch_1 = Unit3D(output_channels=320, kernel_shape=[7, 1, 1],
+                branch_1 = Unit3D(output_channels=320, kernel_shape=[1, 7, 1],
                         name='Conv2d_0c_7x1')._build(branch_1, is_training=is_training)
                 branch_1 = Unit3D(output_channels=320, kernel_shape=[3, 3, 3], padding='SAME',
                         stride=[2, 2, 2], name='Conv2d_1a_3x3')._build(branch_1, is_training=is_training)
@@ -288,8 +288,8 @@ class InceptionV4:
                 # branch_2 = Unit3D(output_channels=512, kernel_shape=[3, 1, 1],
                 #                   name='Conv2d_0d_3x3')(branch_2, is_training=is_training)
                 branch_2 = tf.concat(axis=4, values=[
-                            Unit3D(output_channels=256, kernel_shape=[1, 3, 1], name='Conv2d_0d_1x3')._build(branch_2, is_training=is_training),
-                            Unit3D(output_channels=256, kernel_shape=[1, 1, 3], name='Conv2d_0e_3x1')._build(branch_2, is_training=is_training)
+                            Unit3D(output_channels=256, kernel_shape=[1, 1, 3], name='Conv2d_0d_1x3')._build(branch_2, is_training=is_training),
+                            Unit3D(output_channels=256, kernel_shape=[1, 3, 1], name='Conv2d_0e_3x1')._build(branch_2, is_training=is_training)
                             ])
                             # Unit3D(output_channels=256, kernel_shape=[1, 1, 3],
                             #     name='Conv2d_0f_1x3')(branch_2, is_training=is_training)])

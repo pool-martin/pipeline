@@ -44,7 +44,7 @@ def get_scope_and_patterns_to_exclude(model_name):
         pattern_to_restore = ".*inception_i3d/[C|M].*"
     elif model_name == 'i3d_v4':
         scopes_to_exclude = []
-        pattern_to_exclude = []
+        pattern_to_exclude = ["global_step"]
         pattern_to_restore = ".*InceptionV4/[C|M].*"
     return scopes_to_exclude, pattern_to_exclude, pattern_to_restore
 
@@ -68,23 +68,39 @@ def get_variables_to_restore(model_name):
 # https://www.tensorflow.org/api_docs/python/tf/contrib/framework/assign_from_values_fn
 
 def assembly_3d_checkpoint(model_name, path):
+
+    print('assembly_3d_checkpoint based on: ', path)
     checkpoint = {}
     assert os.path.exists(path), "Provided incorrect path to the file. {} doesn't exist".format(path)
-    reader = tf.train.NewCheckpointReader(path)
+    model_path = tf.train.latest_checkpoint(path)
+    reader = tf.train.NewCheckpointReader(model_path)
     variables_to_restore = get_variables_to_restore(model_name)
-    var_shapes = reader.get_variable_to_shape_map()
 
     for variable in variables_to_restore:
-        if(reader.has_tensor(variable.name)):
-            current_value = reader.get_tensor(variable.name)
-            target_shape = variable.shape
-            if (len(var_shapes[variable.name]) == 1 + len(target_shape) \
-            and (var_shapes[variable.name][0] + target_shape[1]) \
-            and (var_shapes[variable.name][1] + target_shape[2]) \
-            and (var_shapes[variable.name][2] + target_shape[3])):
-                target_value = np.empty((480, 640, 3, 100))
+        variable_name = variable.name.split(':')[0]
+        # print(variable_name)
+        if(reader.has_tensor(variable_name)):
+            current_value = reader.get_tensor(variable_name)
+            if current_value.shape == variable.shape:
+                # print('same shape:', variable_name)
+                checkpoint[variable_name] = current_value
+            else:
+                if current_value.shape == variable.shape[1:]:
+                    # print('same shape:', variable_name)
+                    target_value = np.empty(variable.shape)
 
-                for k in xrange(target_shape[0]):
-                    target_value[k,:,:,:] = current_value
-            checkpoint[variable.name] = target_value
-    return checkpoint
+                    for k in range(target_value.shape[0]):
+                        target_value[k,:,:,:,:] = current_value
+                    checkpoint[variable_name] = target_value
+                else:
+                    print(variable_name, '2D', current_value.shape, '3D', variable.shape)
+        else:
+            print(variable.name, 'Not in checkpoint: ')
+
+
+    initializer_fn = tf.contrib.framework.assign_from_values_fn(checkpoint)
+    print('assembly_3d_checkpoint: mount values with success! len:', len(checkpoint))
+
+    def InitFn(scaffold,sess):
+        initializer_fn(sess)
+    return InitFn

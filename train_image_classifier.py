@@ -177,7 +177,7 @@ def model_fn(features, labels, mode, config=None):
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
         ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.init_weights(FLAGS.model_name, ws_path))
+        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.assembly_3d_checkpoint(FLAGS.model_name, ws_path))
 
     if FLAGS.model_name == 'i3d_v4' and FLAGS.is_sonnet:
         dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
