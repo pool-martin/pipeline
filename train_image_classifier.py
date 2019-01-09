@@ -313,7 +313,7 @@ def create_estimator(steps_per_epoch, checkpoint = None):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']):
 
-        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4']:
+        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']:
             _, _, pattern = fine_tune.get_scope_and_patterns_to_exclude(FLAGS.model_name)
             ws = tf.estimator.WarmStartSettings(checkpoint or helpers.assembly_ws_checkpoint_path(FLAGS),
                                             pattern)
