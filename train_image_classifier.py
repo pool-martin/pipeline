@@ -176,8 +176,8 @@ def model_fn(features, labels, mode, config=None):
         #   print("endpoint: {}, shape: {}".format(key, end_point.shape))
         probabilities = end_points['Predictions']
         extracted_features = end_points['PreLogitsFlatten']
-        ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
-        scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.assembly_3d_checkpoint(FLAGS.model_name, ws_path))
+        # ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
+        # scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.assembly_3d_checkpoint(FLAGS.model_name, ws_path))
 
     if FLAGS.model_name == 'i3d_v4' and FLAGS.is_sonnet:
         dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
@@ -313,7 +313,7 @@ def create_estimator(steps_per_epoch, checkpoint = None):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']):
 
-        if FLAGS.model_name in ['i3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']:
+        if FLAGS.model_name in ['i3d', 'i3d_v4', 'inception_v1', 'inception_v4', 'mobilenet_v2']:
             _, _, pattern = fine_tune.get_scope_and_patterns_to_exclude(FLAGS.model_name)
             ws = tf.estimator.WarmStartSettings(checkpoint or helpers.assembly_ws_checkpoint_path(FLAGS),
                                             pattern)
