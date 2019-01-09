@@ -442,7 +442,9 @@ class InceptionV4:
                 net = tf.layers.Flatten()(net)
                 end_points['PreLogitsFlatten'] = net
                 # 1536
-                logits = tf.layers.dense(net, self._num_classes, activation=None)
+                logits = slim.fully_connected(net, self._num_classes, activation_fn=None,
+                                        scope='Logits')
+                # logits = tf.layers.dense(net, self._num_classes, activation=None)
                 end_points['Logits'] = logits
                 end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
         return logits, end_points
