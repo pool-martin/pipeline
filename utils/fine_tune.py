@@ -97,6 +97,7 @@ def assembly_3d_checkpoint(model_name, path):
         else:
             print(variable.name, 'Not in checkpoint: ')
 
+    save_assembled_checkpoint(checkpoint)
 
     initializer_fn = tf.contrib.framework.assign_from_values_fn(checkpoint)
     print('assembly_3d_checkpoint: mount values with success! len:', len(checkpoint))
@@ -104,3 +105,11 @@ def assembly_3d_checkpoint(model_name, path):
     def InitFn(scaffold,sess):
         initializer_fn(sess)
     return InitFn
+
+def save_assembled_checkpoint(collection):
+  # tf.reset_default_graph()
+  with tf.Session() as session_save:
+    for key, var in collection.items():
+      var = tf.Variable(var, name=key)
+    session_save.run(tf.global_variables_initializer())
+    tf.train.Saver().save(session_save, '/Exp/teste.ckpt')
