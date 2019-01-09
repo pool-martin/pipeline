@@ -37,8 +37,8 @@ def get_scope_and_patterns_to_exclude(model_name):
         pattern_to_restore = ".*InceptionV4/[C|M].*"
     if model_name == 'mobilenet_v2':
         scopes_to_exclude = ["MobilenetV2/Logits"]
-        pattern_to_exclude = []
-        pattern_to_restore = ".*MobilenetV2/[C|M].*"
+        pattern_to_exclude = ["global_step"]
+        pattern_to_restore = ".*MobilenetV2/[C|e].*"
     elif model_name == 'i3d':
         scopes_to_exclude = ["RGB/inception_i3d/Logits"]
         pattern_to_exclude = ["global_step"]
