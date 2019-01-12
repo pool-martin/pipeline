@@ -92,7 +92,7 @@ def input_fn(videos_in_split,
     elif shuffle:
         dataset = dataset.shuffle(len(videos_in_split))
     elif num_epochs is not None:
-        dataset = dataset.repeat(num_epoci3d_v4_slimhs)
+        dataset = dataset.repeat(num_epochs)
 
     # print('4##############################################################################################################\n#####################################################################')
     dataset = dataset.apply(
