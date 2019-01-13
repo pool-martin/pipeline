@@ -17,7 +17,7 @@ from nets import nets_factory
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
 import utils.helpers as helpers
-from utils.opencv import get_video_frames
+from utils.opencv import get_video_frames, get_video_flows
 from utils.video_loader import VideoLoader
 from utils.flags import define_flags
 from utils.save_features import save_extracted_features
@@ -62,23 +62,36 @@ def input_fn(videos_in_split,
         frames_identificator = tf.string_to_number(frame_info.values[2], out_type=tf.int32)
         # tf.print(snippet_path, [snippet_path], "\n\snippet_path: \n" )
 
-        if dataset_in_memory:
-#            global dataset_loader
-            video_fragment_count = fragments_count_table.lookup(video_name)
-            # tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
-            snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count, FLAGS.debug], tf.float32, stateful=False, name='retrieve_snippet')
-            # tf.print(snippet, [video_fragmesnippetnt_count], "\n\snippet: \n" )
-            # snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
-            # tf.print(snippet, [snippet], "\n\snippet: \n" )
+        if FLAGS.optical_flow:
+            if dataset_in_memory:
+                video_fragment_count = fragments_count_table.lookup(video_name)
+                # tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
+                snippet = tf.py_func(dataset_loader.get_video_flows, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count, FLAGS.debug, FLAGS.of_difference], tf.float32, stateful=False, name='retrieve_snippet')
+            else:
+                snippet = tf.py_func(get_video_flows, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type, FLAGS.of_difference], tf.float32, stateful=False, name='retrieve_snippet')
         else:
-            snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
+            if dataset_in_memory:
+    #            global dataset_loader
+                video_fragment_count = fragments_count_table.lookup(video_name)
+                # tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
+                snippet = tf.py_func(dataset_loader.get_video_frames, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count, FLAGS.debug], tf.float32, stateful=False, name='retrieve_snippet')
+                # tf.print(snippet, [video_fragmesnippetnt_count], "\n\snippet: \n" )
+                # snippet.set_shape([FLAGS.snippet_size, FLAGS.image_shape, FLAGS.image_shape, 3])
+                # tf.print(snippet, [snippet], "\n\snippet: \n" )
+            else:
+                snippet = tf.py_func(get_video_frames, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type], tf.float32, stateful=False, name='retrieve_snippet')
 
         snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
-        snippet.set_shape([snippet_size] + list(image_size) + [3])
+        if FLAGS.optical_flow:
+            snippet.set_shape([snippet_size] + list(image_size) + [2])
+        else:
+            snippet.set_shape([snippet_size] + list(image_size) + [3])
 
         snippet = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
                                                                 normalize_per_image=FLAGS.normalize_per_image), snippet)
-        snippet = tf.squeeze(snippet)
+
+        # ndarray of dimension (T, M, N, C), where T is the number of frames, M is the height, N is width, and C is depth
+        snippet = tf.squeeze(snippet, axis=[0])
         
         snippet_id = tf.string_join( inputs=[video_name, '_', frame_info.values[2] ] )
         # tf.print(snippet, [snippet_id], "\n\nsnippet values: \n" )
@@ -313,7 +326,7 @@ def create_estimator(steps_per_epoch, checkpoint = None):
        estimator = tf.keras.estimator.model_to_estimator(keras_model=keras_model(), config=config)
     elif(FLAGS.model_name in ['i3d', 'i3d_v4', 'c3d', 'inception_v1', 'inception_v4', 'mobilenet_v2']):
 
-        if FLAGS.model_name in ['i3d', 'i3d_v4', 'inception_v1', 'inception_v4', 'mobilenet_v2']:
+        if FLAGS.model_name in ['i3d', 'i3d_v4', 'inception_v1', 'inception_v4', 'mobilenet_v2'] and FLAGS.do_warmstart:
             _, _, pattern = fine_tune.get_scope_and_patterns_to_exclude(FLAGS.model_name)
             ws = tf.estimator.WarmStartSettings(checkpoint or helpers.assembly_ws_checkpoint_path(FLAGS),
                                             pattern)

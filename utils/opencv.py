@@ -160,3 +160,65 @@ def show_video_frame(video_name, frame_no):
 
 if __name__ == '__main__':
     show_video_frame('/home/jp/repos/DL/2kporn/videos/vNonPorn000001.mp4', 800)
+
+
+
+def get_video_flows(video_path, frames_identificator, snippet_path, image_size, split_type, of_difference):
+    video_frames = []
+
+    # t1= time.time()
+    video_path = video_path.decode("utf-8") 
+
+    with open(snippet_path.decode("utf-8"), 'r') as f:
+        frame_numbers = f.read().split('\n')[:-1]
+    
+    position = 0
+    if of_difference == 1:
+        position = 1
+    elif of_difference == 5:
+        position = 2
+    elif of_difference == 15:
+        position = 3
+    elif of_difference == 30:
+        position = 4
+
+    frame_numbers = frame_numbers[0] # Just 2D now
+    frames = frame_numbers.split('|')
+    frame_1 = float(frames[0])
+    frame_2 = float(frames[position])
+
+    fvs = FileVideoStream(video_path, frames_to_extract=[frame_1, frame_2]).start()
+
+    if (fvs.isOpened() == False): raise ValueError('Error opening video {}'.format(video_path))
+
+    for x in range(2):
+
+        ret, frame_no, frame = fvs.read()
+        if (ret == False): 
+            print('Error extracting video {} id {} frame {} index {}'.format(video_path, frames_identificator, frame_no, x))
+        else:
+          # unfortunately opencv uses bgr color format as default
+          frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+          video_frames.append(frame)
+
+    # cap.release()
+    fvs.stop()
+    #temporary recovery to not break the pipeline
+
+    flow = cv2.calcOpticalFlowFarneback(video_frames[0],video_frames[1], None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+    flow = cv2.resize(flow, tuple(image_size), interpolation=cv2.INTER_CUBIC)
+    numpy_flow = np.asarray(flow, dtype=np.float32)
+    video_frames = [numpy_flow]
+
+    if(len(video_frames) > 0 and len(video_frames) < len(frame_numbers)):
+        while len(video_frames) < len(frame_numbers):
+            video_frames.append(video_frames[0])
+
+    results = np.stack([numpy_flow], axis=0)
+    print('flow shape', flow.shape)
+    print('numpy_flow shape', numpy_flow.shape)
+    print('results shape', results.shape)
+    # t2= time.time()
+    # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
+    return results

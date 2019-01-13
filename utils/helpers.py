@@ -17,10 +17,13 @@ def assembly_snippets_path(FLAGS, dataset_in_memory):
     if FLAGS.force_splits_dir_path:
         snippets_path = FLAGS.snippets_dir
     else:
+        split_type = FLAGS.split_type
+        if FLAGS.optical_flow:
+            split_type = 'of'
         engine = 'skvideo'
         if not dataset_in_memory:
             engine = FLAGS.engine_type
-        snippets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), engine, 'w_{}_l_{}'.format(FLAGS.snippet_width, FLAGS.snippet_size) )
+        snippets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, split_type, '{}_fps'.format(FLAGS.sample_rate), engine, 'w_{}_l_{}'.format(FLAGS.snippet_width, FLAGS.snippet_size) )
     return snippets_path
 
 def assembly_ws_checkpoint_path(FLAGS):

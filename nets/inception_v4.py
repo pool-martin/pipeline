@@ -170,6 +170,8 @@ def inception_v4_base(inputs, final_endpoint='Mixed_7d', scope=None):
     end_points[name] = net
     return name == final_endpoint
 
+  end_points['inputs'] = inputs
+
   with tf.variable_scope(scope, 'InceptionV4', [inputs]):
     with slim.arg_scope([slim.conv2d, slim.max_pool2d, slim.avg_pool2d],
                         stride=1, padding='SAME'):

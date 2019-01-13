@@ -11,6 +11,8 @@ def define_flags():
         'ws_checkpoint_dir', '/DL/initial_weigths/', 'warm start checkpoint dir.')
     tf.app.flags.DEFINE_string(
         'ws_checkpoint', 'rgb_imagenet', 'warm start checkpoint to be used.')
+    tf.app.flags.DEFINE_bool(
+        'do_warmstart', True, 'perform the warm start.')
     tf.app.flags.DEFINE_string(
         'experiment_tag', 'initial_training', 'tag used in model dir places where we want to diferentiate subsequent executions.')
     tf.app.flags.DEFINE_string(
@@ -25,6 +27,10 @@ def define_flags():
         'debug', False, 'enable debug print.')
     tf.app.flags.DEFINE_bool(
         'random_on_video', True, 'ordenate sets by video but randpn inside the video.')
+    tf.app.flags.DEFINE_bool(
+        'optical_flow', False, 'We are processing optical flow.')
+    tf.app.flags.DEFINE_integer(
+        'of_difference', '1', 'The window to be used. 1, 5, 15, 30')
     
     tf.app.flags.DEFINE_string(
         'snippets_dir', '', 'The sets to be used.')
