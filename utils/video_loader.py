@@ -170,6 +170,6 @@ class VideoLoader:
 
         numpy_flow = np.asarray(flow, dtype=np.float32)
         final_fragment = np.stack([numpy_flow], axis=0)
-        print('numpy_flow shape', numpy_flow.shape)
+        # print('numpy_flow shape', numpy_flow.shape)
 
         return final_fragment

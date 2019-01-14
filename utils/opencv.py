@@ -216,9 +216,9 @@ def get_video_flows(video_path, frames_identificator, snippet_path, image_size, 
             video_frames.append(video_frames[0])
 
     results = np.stack([numpy_flow], axis=0)
-    print('flow shape', flow.shape)
-    print('numpy_flow shape', numpy_flow.shape)
-    print('results shape', results.shape)
+    # print('flow shape', flow.shape)
+    # print('numpy_flow shape', numpy_flow.shape)
+    # print('results shape', results.shape)
     # t2= time.time()
     # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
     return results
