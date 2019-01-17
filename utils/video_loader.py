@@ -189,7 +189,7 @@ class VideoLoader:
         magnitude, angle = cv2.cartToPolar(x, y, angleInDegrees=True)
         magnitude = np.clip(magnitude, 0, 255)
         print('shapes', flow.shape,  numpy_flow.shape, magnitude.shape, flush=True)
-        numpy_flow = np.concatenate((numpy_flow, magnitude), axis=2)
+        numpy_flow = np.append(numpy_flow, magnitude, axis=2)
         print('shapes2', flow.shape,  numpy_flow.shape, magnitude.shape, flush=True)
 
         final_fragment = np.stack([numpy_flow], axis=0)
