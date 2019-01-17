@@ -84,7 +84,7 @@ def input_fn(videos_in_split,
 
         snippet_size = 1 if FLAGS.split_type == '2D' else FLAGS.snippet_size
         if FLAGS.optical_flow:
-            snippet.set_shape([snippet_size] + list(image_size) + [2])
+            snippet.set_shape([snippet_size] + list(image_size) + [3])
         else:
             snippet.set_shape([snippet_size] + list(image_size) + [3])
 
