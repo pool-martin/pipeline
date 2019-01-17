@@ -183,7 +183,7 @@ class VideoLoader:
         fragment_1 = cv2.cvtColor(fragment[1], cv2.COLOR_BGR2GRAY)
 
         # flow = cv2.calcOpticalFlowFarneback(fragment_0,fragment_1, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        flow = optflow.brox(video_frames[0] / 255., video_frames[1] / 255.)
+        flow = optflow.brox(fragment_0 / 255., fragment_1 / 255.)
 
         numpy_flow = np.asarray(flow, dtype=np.float32)
         final_fragment = np.stack([numpy_flow], axis=0)
