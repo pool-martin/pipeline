@@ -228,13 +228,13 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
 
     # flow = cv2.calcOpticalFlowFarneback(video_frames[0],video_frames[1], None, 0.5, 3, 15, 3, 5, 1.2, 0)
     flow = optflow.brox(video_frames[0] / 255., video_frames[1] / 255.)
-
     numpy_flow = np.asarray(flow, dtype=np.float32)
     x, y = flow[:, :, 0].astype(np.float32), flow[:, :, 1].astype(np.float32)
     magnitude, angle = cv2.cartToPolar(x, y, angleInDegrees=True)
     magnitude = np.clip(magnitude, 0, 255)
-    numpy_flow = np.expand_dims(numpy_flow, axis=2)
-    numpy_flow[:, :, 2] = magnitude
+    print('shapes', flow.shape,  numpy_flow.shape, magnitude.shape, flush=True)
+    numpy_flow = np.concatenate((numpy_flow, magnitude), axis=2)
+    print('shapes2', flow.shape,  numpy_flow.shape, magnitude.shape, flush=True)
 
     video_frames = [numpy_flow]
 
