@@ -1,8 +1,10 @@
 import numpy as np
 import skvideo.io
 import cv2
+import optflow
 from queue import Queue
 from threading import Thread, Event, Lock
+from subprocess import call
 import os
 import time
 import gc
@@ -103,6 +105,20 @@ class VideoLoader:
     def get_video_flows(self, video_name, frames_identificator, snippet_path, image_size, split_type, fragments_count, debug_flag, of_difference):
 
         video = video_name.decode("utf-8") 
+        fragment_dir = '/Exp/2kporn/cache/of/{}'.format(video)
+        fragment_path = '{}/{}'.format(fragment_dir, frames_identificator)
+
+        # Cache
+        if (os.path.isfile(fragment_path)):
+            with open(fragment_path, 'rb') as f:
+                results = f.read()
+            return results
+        
+        if not os.path.isdir(fragment_dir):
+            command = "mkdir -p " + fragment_dir
+            # print('\n', command)
+            call(command, shell=True)
+
         # print('#################################### GET_VIDEO_FRAME {} fragment {} last {}'.format(video, snippet_path.decode("utf-8"), fragments_count))
         if debug_flag: print('\nvideo {}'.format(video))
 
@@ -166,10 +182,14 @@ class VideoLoader:
         fragment_0 = cv2.cvtColor(fragment[0], cv2.COLOR_BGR2GRAY)
         fragment_1 = cv2.cvtColor(fragment[1], cv2.COLOR_BGR2GRAY)
 
-        flow = cv2.calcOpticalFlowFarneback(fragment_0,fragment_1, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        # flow = cv2.calcOpticalFlowFarneback(fragment_0,fragment_1, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        flow = optflow.brox(video_frames[0] / 255., video_frames[1] / 255.)
 
         numpy_flow = np.asarray(flow, dtype=np.float32)
         final_fragment = np.stack([numpy_flow], axis=0)
         # print('numpy_flow shape', numpy_flow.shape)
+
+        with open(fragment_path, 'wb') as f:
+        f.write(final_fragment)
 
         return final_fragment

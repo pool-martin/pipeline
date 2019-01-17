@@ -68,7 +68,7 @@ def input_fn(videos_in_split,
                 # tf.print(video_fragment_count, [video_fragment_count], "\n\video_fragment_count: \n" )
                 snippet = tf.py_func(dataset_loader.get_video_flows, [video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, video_fragment_count, FLAGS.debug, FLAGS.of_difference], tf.float32, stateful=False, name='retrieve_snippet')
             else:
-                snippet = tf.py_func(get_video_flows, [video_path, frames_identificator, snippet_path, image_size, FLAGS.split_type, FLAGS.of_difference], tf.float32, stateful=False, name='retrieve_snippet')
+                snippet = tf.py_func(get_video_flows, [video_path, video_name, frames_identificator, snippet_path, image_size, FLAGS.split_type, FLAGS.of_difference], tf.float32, stateful=False, name='retrieve_snippet')
         else:
             if dataset_in_memory:
     #            global dataset_loader

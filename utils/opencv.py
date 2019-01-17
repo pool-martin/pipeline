@@ -1,8 +1,10 @@
 import cv2, os, time, sys
 from threading import Thread
+from subprocess import call
 import numpy as np
 import tensorflow as tf
 from queue import Queue
+import optflow
 
 def get_video_params(video_path):
     # print('.', end='', flush=True)
@@ -136,7 +138,7 @@ def show_video_frame(video_name, frame_no):
     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
 
     #Read the next frame from the video. If you set frame 749 above then the code will return the last frame.
-    ret, frame = cap.read()
+    ret, frame = capfrom subprocess import call.read()
     print('ret:', ret)
 
     #Set grayscale colorspace for the frame. 
@@ -163,13 +165,31 @@ if __name__ == '__main__':
 
 
 
-def get_video_flows(video_path, frames_identificator, snippet_path, image_size, split_type, of_difference):
+def get_video_flows(video_path, video_name, frames_identificator, snippet_path, image_size, split_type, of_difference):
+
+    video_path = video_path.decode("utf-8") 
+    snippet_path = snippet_path.decode("utf-8")
+    video_name = video_name..decode("utf-8")
+
+    fragment_dir = '/Exp/2kporn/cache/of/{}'.format(video_name)
+    fragment_path = '{}/{}'.format(fragment_dir, frames_identificator)
+
+    # Cache
+    if (os.path.isfile(fragment_path)):
+        with open(fragment_path, 'rb') as f:
+            results = f.read()
+        return results
+    
+    if not os.path.isdir(fragment_dir):
+        command = "mkdir -p " + fragment_dir
+        # print('\n', command)
+        call(command, shell=True)
+
     video_frames = []
 
     # t1= time.time()
-    video_path = video_path.decode("utf-8") 
 
-    with open(snippet_path.decode("utf-8"), 'r') as f:
+    with open(snippet_path, 'r') as f:
         frame_numbers = f.read().split('\n')[:-1]
     
     position = 0
@@ -205,7 +225,9 @@ def get_video_flows(video_path, frames_identificator, snippet_path, image_size, 
     fvs.stop()
     #temporary recovery to not break the pipeline
 
-    flow = cv2.calcOpticalFlowFarneback(video_frames[0],video_frames[1], None, 0.5, 3, 15, 3, 5, 1.2, 0)
+    # flow = cv2.calcOpticalFlowFarneback(video_frames[0],video_frames[1], None, 0.5, 3, 15, 3, 5, 1.2, 0)
+    flow = optflow.brox(video_frames[0] / 255., video_frames[1] / 255.)
+
 
     flow = cv2.resize(flow, tuple(image_size), interpolation=cv2.INTER_CUBIC)
     numpy_flow = np.asarray(flow, dtype=np.float32)
@@ -216,9 +238,13 @@ def get_video_flows(video_path, frames_identificator, snippet_path, image_size, 
             video_frames.append(video_frames[0])
 
     results = np.stack([numpy_flow], axis=0)
+
     # print('flow shape', flow.shape)
     # print('numpy_flow shape', numpy_flow.shape)
     # print('results shape', results.shape)
     # t2= time.time()
     # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
+    with open(fragment_path, 'wb') as f:
+       f.write(results)
+
     return results
