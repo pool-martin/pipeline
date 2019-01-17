@@ -105,7 +105,7 @@ class VideoLoader:
     def get_video_flows(self, video_name, frames_identificator, snippet_path, image_size, split_type, fragments_count, debug_flag, of_difference):
 
         video = video_name.decode("utf-8") 
-        fragment_dir = '/Exp/2kporn/cache/of/{}'.format(video)
+        fragment_dir = '/Exp/2kporn/cache/of/{}/{}'.format(video_name, of_difference)
         fragment_path = '{}/{}'.format(fragment_dir, frames_identificator)
 
         # Cache
