@@ -110,8 +110,7 @@ class VideoLoader:
 
         # Cache
         if (os.path.isfile(fragment_path)):
-            with open(fragment_path, 'rb') as f:
-                results = f.read()
+            results = np.load(fragment_path)
             return results
         
         if not os.path.isdir(fragment_dir):
@@ -195,7 +194,6 @@ class VideoLoader:
         final_fragment = np.stack([numpy_flow], axis=0)
         # print('numpy_flow shape', numpy_flow.shape)
 
-        with open(fragment_path, 'wb') as f:
-          f.write(final_fragment)
+        np.save(fragment_path, results)
 
         return final_fragment

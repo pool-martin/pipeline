@@ -176,8 +176,7 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
 
     # Cache
     if (os.path.isfile(fragment_path)):
-        with open(fragment_path, 'rb') as f:
-            results = f.read()
+        results = np.load(fragment_path)
         return results
     
     if not os.path.isdir(fragment_dir):
@@ -249,7 +248,6 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
     # print('results shape', results.shape, flush=True)
     # t2= time.time()
     # print('{} id: {} time: {}'.format(video_path.split('/')[-1], frames_identificator, t2 - t1), flush=True)
-    with open(fragment_path, 'wb') as f:
-       f.write(results)
+    np.save(fragment_path, results)
 
     return results
