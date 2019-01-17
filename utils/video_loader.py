@@ -190,6 +190,6 @@ class VideoLoader:
         # print('numpy_flow shape', numpy_flow.shape)
 
         with open(fragment_path, 'wb') as f:
-        f.write(final_fragment)
+          f.write(final_fragment)
 
         return final_fragment
