@@ -137,6 +137,9 @@ def checkSKVideo(real_duration_path, path, video):
             f.write(str(int(skvideo_frame_count)))
         video_file = None
         gc.collect()
+    else:
+        print(video, 'skipped')
+
 
 def mainSKVideoMultiThread():
 
