@@ -138,7 +138,7 @@ def show_video_frame(video_name, frame_no):
     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
 
     #Read the next frame from the video. If you set frame 749 above then the code will return the last frame.
-    ret, frame = capfrom subprocess import call.read()
+    ret, frame = cap.read()
     print('ret:', ret)
 
     #Set grayscale colorspace for the frame. 
