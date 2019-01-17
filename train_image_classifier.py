@@ -12,7 +12,8 @@ import time
 
 import numpy as np
 
-from nets import i3d, i3d_v4, i3d_v4_slim, c3d
+# from net import i3d, i3d_v4
+from nets import i3d_v4_slim, c3d
 from nets import nets_factory
 from utils.get_file_list import getListOfFiles
 from utils.time_history import TimeHistory
@@ -164,23 +165,23 @@ def model_fn(features, labels, mode, config=None):
     else:
         is_training = False
 
-    if FLAGS.model_name == 'i3d':
-        with tf.variable_scope('RGB'):
-            dnn_model = i3d.InceptionI3d(num_classes=len(dataset_labels), spatial_squeeze=True)
-            probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
-            logits = end_points['Logits']
+    # if FLAGS.model_name == 'i3d':
+    #     with tf.variable_scope('RGB'):
+    #         dnn_model = i3d.InceptionI3d(num_classes=len(dataset_labels), spatial_squeeze=True)
+    #         probabilities, end_points = dnn_model(features['snippet'], is_training=is_training)
+    #         logits = end_points['Logits']
 
-            # extract_end_point = end_points['Mixed_5c']
+    #         # extract_end_point = end_points['Mixed_5c']
 
-            # kernel_size = extract_end_point.get_shape()[1:4]
-            # net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 2, 7, 7, 1],
-            #                 strides=[1, 1, 1, 1, 1], padding='VALID')
-            # end_points['global_pool'] = net
+    #         # kernel_size = extract_end_point.get_shape()[1:4]
+    #         # net = tf.nn.avg_pool3d(extract_end_point, ksize=[1, 2, 7, 7, 1],
+    #         #                 strides=[1, 1, 1, 1, 1], padding='VALID')
+    #         # end_points['global_pool'] = net
 
-        end_points['extracted_features'] = tf.layers.Flatten()(end_points['global_pool'])
-        extracted_features = end_points['extracted_features']
-        # scope_to_exclude = ["RGB/inception_i3d/Logits"]
-        # pattern_to_exclude = []
+    #     end_points['extracted_features'] = tf.layers.Flatten()(end_points['global_pool'])
+    #     extracted_features = end_points['extracted_features']
+    #     # scope_to_exclude = ["RGB/inception_i3d/Logits"]
+    #     # pattern_to_exclude = []
 
     if FLAGS.model_name == 'i3d_v4' and not FLAGS.is_sonnet:
         dnn_model = i3d_v4_slim.InceptionV4(num_classes=len(dataset_labels), create_aux_logits=False)
@@ -192,11 +193,11 @@ def model_fn(features, labels, mode, config=None):
         # ws_path = helpers.assembly_ws_checkpoint_path(FLAGS)
         # scaffold = tf.train.Scaffold(init_op=None, init_fn=fine_tune.assembly_3d_checkpoint(FLAGS.model_name, ws_path))
 
-    if FLAGS.model_name == 'i3d_v4' and FLAGS.is_sonnet:
-        dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
-        logits, end_points = dnn_model(features['snippet'], is_training=is_training)
-        probabilities = end_points['Predictions']
-        extracted_features = end_points['PreLogitsFlatten']
+    # if FLAGS.model_name == 'i3d_v4' and FLAGS.is_sonnet:
+    #     dnn_model = i3d_v4.InceptionI3d_v4(num_classes=len(dataset_labels), create_aux_logits=False)
+    #     logits, end_points = dnn_model(features['snippet'], is_training=is_training)
+    #     probabilities = end_points['Predictions']
+    #     extracted_features = end_points['PreLogitsFlatten']
 
     if FLAGS.model_name == 'c3d':
         logits, end_points = c3d.C3D(input=features['snippet'], num_classes=len(dataset_labels))
