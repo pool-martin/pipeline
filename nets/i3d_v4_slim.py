@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sonnet as snt
+# import sonnet as snt
 import tensorflow as tf
 
 slim = tf.contrib.slim
@@ -49,16 +49,17 @@ class Unit3D:
       Outputs from the module.
     """
     if self._tf_library == 'sonnet':
-        net = snt.Conv3D(output_channels=self._output_channels,
-                        kernel_shape=self._kernel_shape,
-                        stride=self._stride,
-                        padding=self._padding,
-                        use_bias=self._use_bias)(inputs)
-        if self._use_batch_norm:
-            bn = snt.BatchNorm(name='BatchNorm')
-            net = bn(net, is_training=is_training, test_local_stats=False)
-        if self._activation_fn is not None:
-            net = self._activation_fn(net)
+        # net = snt.Conv3D(output_channels=self._output_channels,
+        #                 kernel_shape=self._kernel_shape,
+        #                 stride=self._stride,
+        #                 padding=self._padding,
+        #                 use_bias=self._use_bias)(inputs)
+        # if self._use_batch_norm:
+        #     bn = snt.BatchNorm(name='BatchNorm')
+        #     net = bn(net, is_training=is_training, test_local_stats=False)
+        # if self._activation_fn is not None:
+        #     net = self._activation_fn(net)
+        print('not implemented')
     else:
         net = slim.conv3d(inputs, 
                         num_outputs=self._output_channels,
