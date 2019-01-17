@@ -147,7 +147,7 @@ def mainSKVideoMultiThread():
 
     videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
-    Parallel(n_jobs=10)(delayed(checkSKVideo)(real_duration_path, path, video) for video in videos)
+    Parallel(n_jobs=5)(delayed(checkSKVideo)(real_duration_path, path, video) for video in videos)
 
 def mainSKVideo():
   path = '/DL/2kporn'
@@ -165,5 +165,5 @@ def mainSKVideo():
 if __name__ == '__main__':
     # mainOpenCV()
     # mainSKVideo()
-    mainOpenCVMultiThread()
+    # mainOpenCVMultiThread()
     mainSKVideoMultiThread()
