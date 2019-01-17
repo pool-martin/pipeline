@@ -23,7 +23,7 @@ class Unit3D:
                use_bias=False,
                name='unit_3d', 
                reuse=tf.AUTO_REUSE,
-               padding=snt.SAME,
+               padding='SAME',
                tf_library='slim'):
     """Initializes Unit3D module."""
     # super(Unit3D, self).__init__(name=name)
