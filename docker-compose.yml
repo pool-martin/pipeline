@@ -29,11 +29,14 @@ services:
         target: /DL
         read_only: true
       - type: bind
-        source: .
+        source: /work/${USER}/pipeline
         target: /workspace
       - type: bind
-        source: /home/${USER}/container_home
+        source: /work/${USER}/container_home
         target: /home/${USER}
+      - type: bind
+        source: /work/${USER}/temp_opencv
+        target: /temp_opencv/
     user: ${USER}
     group_add:
       - ${OUTSIDE_GROUP}
