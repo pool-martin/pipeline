@@ -28,20 +28,20 @@ Step 1 - Create container
         ~/docker-compose up -d --build --scale gpu=2 gpu
     if not using docker-compose:
         docker image build --file ./Dockerfile.gpu --tag jp-pipeline-gpu:v1 .
-        nvidia-docker run --name jp_gpu_1 -ti -v /home/jp/Exp/:/Exp/ -v /home/jp/DL/:/DL/ -v .:/workspace/ --userns=host jp-pipeline-gpu:v1 /bin/bash
+        nvidia-docker run --name jp_gpu_5 -ti -v /home/jp/Exp/:/Exp/ -v /home/jp/DL/:/DL/ -v .:/workspace/ --userns=host jp-pipeline-gpu:v1 /bin/bash
 
 Step 2 - Create sets (network_training, network_validation, svm_training, svm_validation and test)
     # sample-rate unit = fps
     # sample-length unit = number frames
     # sample-width unit = seconds
-    python create_sets.py --sample-rate 1 --snippet-length 16 --snippet-width 1 --engine-type opencv --split-number s1
-    python create_sets.optical_flow.py --sample-rate 1 --snippet-length 1 --snippet-width 1 --engine-type opencv --split-number s1
+    python3 create_sets.py --sample-rate 1 --snippet-length 16 --snippet-width 1 --engine-type opencv --split-number s1
+    python3 create_sets.optical_flow.py --sample-rate 1 --snippet-length 1 --snippet-width 1 --engine-type opencv --split-number s1
 
 Step 3 - Extract features from imagenet/initial weigths
-    python train_image_classifier.py --model_name i3d --gpu_to_use 0,1 --num_gpus 2 --batch_size 2 --train=0 --eval=0 --predict=1
+    python3 train_image_classifier.py --model_name i3d --gpu_to_use 0,1 --num_gpus 2 --batch_size 2 --train=0 --eval=0 --predict=1
 
 Step 3 - Train and extract features
-    python train_image_classifier.py --model_name inception_v4 --gpu_to_use 0,1 --batch_size 56 --num_gpus 2 --epochs 26
+    python3 train_image_classifier.py --model_name inception_v4 --gpu_to_use 0,1 --batch_size 56 --num_gpus 2 --epochs 26
 
 ######################################
 SVM
@@ -49,7 +49,7 @@ Step 1 - Train svm_train
 
 mkdir /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models
 
-python train_svm_layer.py --input_training /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/svm_training_set --output_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models/svm_training.model --jobs 4 --svm_method LINEAR_PRIMAL --preprocess NONE --max_iter_hyper 30
+python3 train_svm_layer.py --input_training /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/extracted_features/svm_training_set --output_model /Exp/2kporn/experiments/i3d/finetune_rmsprop_rgb_imagenet/ml.models/svm_training.model --jobs 4 --svm_method LINEAR_PRIMAL --preprocess NONE --max_iter_hyper 30
 
 Step 2 - Predict
 
