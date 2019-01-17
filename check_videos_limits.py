@@ -82,7 +82,7 @@ def get_real_values(video_path, fps, frame_count):
   duration = get_video_real_duration(fps, real_frame_count)
   return real_frame_count, duration
 
-def checkVideo(real_duration_path, path, video):
+def checkOpencvVideo(real_duration_path, path, video):
     video_path = os.path.join(path, 'videos', video)
     frame_count, fps, height, width = opencv.get_video_params(video_path)
     real_frame_count, real_duration = get_real_values(video_path, fps, frame_count)
@@ -109,7 +109,7 @@ def mainOpenCVMultiThread():
 
     videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
-    Parallel(n_jobs=10)(delayed(checkVideo)(real_duration_path, path, video) for video in videos)
+    Parallel(n_jobs=10)(delayed(checkOpencvVideo)(real_duration_path, path, video) for video in videos)
 
 
 def mainOpenCV():
@@ -123,35 +123,9 @@ def mainOpenCV():
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
   for video in videos:
+    checkOpencvVideo(real_duration_path, path, video)
 
-    video_path = os.path.join(path, 'videos', video)
-    frame_count, fps, height, width = opencv.get_video_params(video_path)
-    real_frame_count, real_duration = get_real_values(video_path, fps, frame_count)
-
-    etf_path = os.path.join(path, 'etf', '{}.etf'.format(video.split('.')[0]))
-    etf_duration = get_etf_duration(etf_path)
-
-    frame_difference = frame_count - real_frame_count
-    duration_difference = etf_duration - real_duration
-    if(frame_difference > 0 or duration_difference > 0):
-      print(video, frame_difference, duration_difference, frame_count, etf_duration, real_frame_count, real_duration)
-
-    real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
-    with open(real_etf_path, 'w') as f:
-      f.write(str(int(real_frame_count)))
-
-
-def mainSKVideo():
-  path = '/DL/2kporn'
-  videos_path = os.path.join(path, 'videos')
-
-  real_duration_path = '/Exp/2kporn/etf_frame_count_skvideo'
-  pathlib.Path(real_duration_path).mkdir(parents=True, exist_ok=True)
-
-  videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
-
-  for video in videos:
-
+def checkSKVideo(real_duration_path, path, video):
     video_path = os.path.join(path, 'videos', video)
     video_file = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
     skvideo_frame_count = video_file.shape[0]
@@ -163,7 +137,33 @@ def mainSKVideo():
     video_file = None
     gc.collect()
 
+def mainSKVideoMultiThread():
+
+    path = '/DL/2kporn'
+    videos_path = os.path.join(path, 'videos')
+
+    real_duration_path = '/Exp/2kporn/etf_frame_count_opencv'
+    pathlib.Path(real_duration_path).mkdir(parents=True, exist_ok=True)
+
+    videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
+
+    Parallel(n_jobs=10)(delayed(checkSKVideo)(real_duration_path, path, video) for video in videos)
+
+def mainSKVideo():
+  path = '/DL/2kporn'
+  videos_path = os.path.join(path, 'videos')
+
+  real_duration_path = '/Exp/2kporn/etf_frame_count_skvideo'
+  pathlib.Path(real_duration_path).mkdir(parents=True, exist_ok=True)
+
+  videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
+
+  for video in videos:
+    checkSKVideo(real_duration_path, path, video)
+
+    
 if __name__ == '__main__':
     # mainOpenCV()
     # mainSKVideo()
     mainOpenCVMultiThread()
+    mainSKVideoMultiThread()
