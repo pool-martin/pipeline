@@ -187,7 +187,7 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
 
     video_frames = []
 
-    # t1= time.time()
+    t1= time.time()
 
     with open(snippet_path, 'r') as f:
         frame_numbers = f.read().split('\n')[:-1]
@@ -242,8 +242,8 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
     # print('flow shape', flow.shape)
     # print('numpy_flow shape', numpy_flow.shape)
     # print('results shape', results.shape)
-    # t2= time.time()
-    # print('---------{}-{}'.format(video_path.split('/')[-1], t2 - t1))
+    t2= time.time()
+    print('{} id: {} time: {}'.format(video_path.split('/')[-1], frames_identificator, t2 - t1))
     with open(fragment_path, 'wb') as f:
        f.write(results)
 
