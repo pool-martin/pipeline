@@ -169,7 +169,7 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
 
     video_path = video_path.decode("utf-8") 
     snippet_path = snippet_path.decode("utf-8")
-    video_name = video_name..decode("utf-8")
+    video_name = video_name.decode("utf-8")
 
     fragment_dir = '/Exp/2kporn/cache/of/{}'.format(video_name)
     fragment_path = '{}/{}'.format(fragment_dir, frames_identificator)
