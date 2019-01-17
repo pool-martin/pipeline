@@ -184,8 +184,13 @@ class VideoLoader:
 
         # flow = cv2.calcOpticalFlowFarneback(fragment_0,fragment_1, None, 0.5, 3, 15, 3, 5, 1.2, 0)
         flow = optflow.brox(fragment_0 / 255., fragment_1 / 255.)
-
         numpy_flow = np.asarray(flow, dtype=np.float32)
+        x, y = flow[:, :, 0].astype(np.float32), flow[:, :, 1].astype(np.float32)
+        magnitude, angle = cv2.cartToPolar(x, y, angleInDegrees=True)
+        magnitude = np.clip(magnitude, 0, 255)
+        numpy_flow = np.expand_dims(numpy_flow, axis=2)
+        numpy_flow[:, :, 2] = magnitude
+
         final_fragment = np.stack([numpy_flow], axis=0)
         # print('numpy_flow shape', numpy_flow.shape)
 

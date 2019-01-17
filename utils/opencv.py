@@ -219,6 +219,7 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
         else:
           # unfortunately opencv uses bgr color format as default
           frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+          frame = cv2.resize(frame, tuple(image_size), interpolation=cv2.INTER_CUBIC)
           video_frames.append(frame)
 
     # cap.release()
@@ -228,9 +229,13 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
     # flow = cv2.calcOpticalFlowFarneback(video_frames[0],video_frames[1], None, 0.5, 3, 15, 3, 5, 1.2, 0)
     flow = optflow.brox(video_frames[0] / 255., video_frames[1] / 255.)
 
-
-    flow = cv2.resize(flow, tuple(image_size), interpolation=cv2.INTER_CUBIC)
     numpy_flow = np.asarray(flow, dtype=np.float32)
+    x, y = flow[:, :, 0].astype(np.float32), flow[:, :, 1].astype(np.float32)
+    magnitude, angle = cv2.cartToPolar(x, y, angleInDegrees=True)
+    magnitude = np.clip(magnitude, 0, 255)
+    numpy_flow = np.expand_dims(numpy_flow, axis=2)
+    numpy_flow[:, :, 2] = magnitude
+
     video_frames = [numpy_flow]
 
     if(len(video_frames) > 0 and len(video_frames) < len(frame_numbers)):
