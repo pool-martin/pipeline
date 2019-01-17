@@ -27,6 +27,7 @@ import cv2, os
 import skvideo.io
 import gc
 from joblib import Parallel, delayed
+import pathlib
 
 
 from os.path import isfile, join
@@ -104,6 +105,7 @@ def mainOpenCVMultiThread():
     videos_path = os.path.join(path, 'videos')
 
     real_duration_path = '/Exp/2kporn/etf_frame_count_opencv'
+    pathlib.Path(real_duration_path).mkdir(parents=True, exist_ok=True)
 
     videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
@@ -116,6 +118,7 @@ def mainOpenCV():
   videos_path = os.path.join(path, 'videos')
 
   real_duration_path = '/Exp/2kporn/etf_frame_count_opencv'
+  pathlib.Path(real_duration_path).mkdir(parents=True, exist_ok=True)
 
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
@@ -143,6 +146,7 @@ def mainSKVideo():
   videos_path = os.path.join(path, 'videos')
 
   real_duration_path = '/Exp/2kporn/etf_frame_count_skvideo'
+  pathlib.Path(real_duration_path).mkdir(parents=True, exist_ok=True)
 
   videos = [f for f in os.listdir(videos_path) if isfile(join(videos_path, f))]
 
