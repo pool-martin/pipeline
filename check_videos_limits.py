@@ -169,5 +169,5 @@ def mainSKVideo():
 if __name__ == '__main__':
     # mainOpenCV()
     # mainSKVideo()
-    # mainSKVideoMultiThread()
-    mainOpenCVMultiThread()
+    mainSKVideoMultiThread()
+    # mainOpenCVMultiThread()
