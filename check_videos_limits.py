@@ -126,16 +126,17 @@ def mainOpenCV():
     checkOpencvVideo(real_duration_path, path, video)
 
 def checkSKVideo(real_duration_path, path, video):
-    video_path = os.path.join(path, 'videos', video)
-    video_file = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
-    skvideo_frame_count = video_file.shape[0]
-
-    print(video)
     real_etf_path = os.path.join(real_duration_path, '{}.etf'.format(video.split('.')[0]))
-    with open(real_etf_path, 'w+') as f:
-      f.write(str(int(skvideo_frame_count)))
-    video_file = None
-    gc.collect()
+    if not (os.path.isfile(real_etf_path)):
+        video_path = os.path.join(path, 'videos', video)
+        video_file = skvideo.io.vread(video_path) #, backend='ffmpeg', verbosity=1)
+        skvideo_frame_count = video_file.shape[0]
+
+        print(video)
+        with open(real_etf_path, 'w+') as f:
+            f.write(str(int(skvideo_frame_count)))
+        video_file = None
+        gc.collect()
 
 def mainSKVideoMultiThread():
 
