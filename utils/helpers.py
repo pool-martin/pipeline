@@ -10,7 +10,12 @@ def assembly_sets_path(FLAGS, operation):
         engine = 'skvideo'
         if operation == 'training':
             engine = FLAGS.engine_type
-        sets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, FLAGS.split_type, '{}_fps'.format(FLAGS.sample_rate), engine )
+
+    split_type = FLAGS.split_type
+    if FLAGS.optical_flow:
+        split_type = 'of'
+
+    sets_path = os.path.join(FLAGS.sets_dir, FLAGS.split_number, split_type, '{}_fps'.format(FLAGS.sample_rate), engine )
     return sets_path
 
 def assembly_snippets_path(FLAGS, dataset_in_memory):
@@ -95,6 +100,8 @@ def get_splits(FLAGS):
     fragments_count_network_training_set = {}
     fragments_count_network_validation_set = {}
 
+    print(os.path.join(assembly_sets_path(FLAGS, 'training'), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")))
+    print(os.path.join(assembly_sets_path(FLAGS, 'validation'), 'network_validation_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")))
     with open(os.path.join(assembly_sets_path(FLAGS, 'training'), 'network_training_set{}.txt'.format('_mini' if FLAGS.mini_sets else "")), 'r') as f:
         network_training_set = f.read().split('\n')[:-1]
     fragments_count_network_training_set = get_fragments_count(network_training_set)
