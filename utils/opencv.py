@@ -172,7 +172,7 @@ def get_video_flows(video_path, video_name, frames_identificator, snippet_path, 
     video_name = video_name.decode("utf-8")
 
     fragment_dir = '/Exp/2kporn/cache/of/f{}/{}'.format(of_difference, video_name)
-    fragment_path = '{}/{}'.format(fragment_dir, frames_identificator)
+    fragment_path = '{}/{}.npy'.format(fragment_dir, frames_identificator)
 
     # Cache
     if (os.path.isfile(fragment_path)):
