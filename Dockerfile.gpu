@@ -48,7 +48,7 @@ RUN cd /temp_build/opencv/build && make -j4 && make install && ldconfig && cd /
 RUN pip3 install cython
 RUN pip3 install --upgrade pip
 RUN pip3 install pandas scikit-learn sk-video scikit-video==1.1.11 opencv-python matplotlib numpy dm-sonnet joblib keras wrapt tensorflow-probability-gpu # tensorflow-hub
-RUN mkdir -p /temp_brox_wrapper && cd /temp_brox_wrapper && git clone https://github.com/pool-martin/optflow.git && cd /temp_brox_wrapper/optflow && python3 setup.py build_ext -i && cp optflow.cpython-35m-x86_64-linux-gnu.so /usr/local/lib/python3.5/dist-packages/
+RUN mkdir -p /temp_brox_wrapper && cd /temp_brox_wrapper && git clone -b master https://github.com/pool-martin/optflow.git && cd /temp_brox_wrapper/optflow && python3 setup.py build_ext -i && cp optflow.cpython-35m-x86_64-linux-gnu.so /usr/local/lib/python3.5/dist-packages/
 
 RUN echo "/usr/local/cuda/lib64/" >> /etc/ld.so.conf && ldconfig
 #USER $OUTSIDE_USER

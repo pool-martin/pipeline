@@ -194,6 +194,6 @@ class VideoLoader:
         final_fragment = np.stack([numpy_flow], axis=0)
         # print('numpy_flow shape', numpy_flow.shape)
 
-        np.save(fragment_path, results)
+        np.save(fragment_path, final_fragment)
 
         return final_fragment
