@@ -106,7 +106,7 @@ class VideoLoader:
 
         video = video_name.decode("utf-8") 
         fragment_dir = '/Exp/2kporn/cache/of/f{}/{}'.format(of_difference, video)
-        fragment_path = '{}/{}'.format(fragment_dir, frames_identificator)
+        fragment_path = '{}/{}.npy'.format(fragment_dir, frames_identificator)
 
         # Cache
         if (os.path.isfile(fragment_path)):
