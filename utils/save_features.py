@@ -18,6 +18,7 @@ def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator)
             header  = [ 'snippet_id' ]
             header += [ 'truth' ]
             header += [ 'feature[%d]' % feature_size ]
+            header += [ 'probabilities' ]
             print(', '.join(header), file=outfile)
         else :
             pickle.dump([num_outputs, feature_size, FLAGS.__flags], outfile)
@@ -29,6 +30,7 @@ def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator)
         snippet_id = sample['snippet_id']
         label = sample['truth_label']
         feats = sample['features']
+        probabilities = sample['probabilities']
         if s == 0:
             #save the shape based on the first example of DB
             #print('feats shape {}'.format(feats.shape))
@@ -38,10 +40,11 @@ def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator)
             record  = [ snippet_id.decode("utf-8") ]
             record += [ str(label) ]
             record += [ _PREDICTION_OUTPUT_FORMAT % feats[f]  for f in range(feats.shape[0]) ]
+            record += [ str(probabilities)]
             print(', '.join(record), file=outfile)
         else :
             #print('snippet_id {}\n, label{}\n, feats{}'.format(snippet_id, label, feats))
-            pickle.dump([snippet_id, label, feats], outfile)
+            pickle.dump([snippet_id, label, feats, probabilities], outfile)
         s += 1
         print('}', end='\n' if (s+1) % 40 == 0 else '', file=sys.stderr, flush=True)
     print('', file=sys.stderr)
