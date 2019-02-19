@@ -31,7 +31,7 @@ _FILE_PATTERN = 'porn2k_%s_*.tfrecord'
 
 # Global vars
 dataset_labels = ['NonPorn', 'Porn']
-dataset_labels = ['0', '1'] #We are extracting labels from filenames and there is is as '1' and '0'
+dataset_labels = [0, 1] #We are extracting labels from filenames and there is is as '1' and '0'
 training_set_length = 0
 
 dataset_loader = None
