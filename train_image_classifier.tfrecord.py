@@ -111,7 +111,7 @@ def parser(serialized_example):
       tf.decode_raw(features['image/encoded_29'], tf.uint8),
   ]
   for image in fragment:
-      image.set_shape([features['image/height'], features['image/width']] )
+      image.set_shape([224, 224] )
 
   image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
   fragment = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
