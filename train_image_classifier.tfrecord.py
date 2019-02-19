@@ -140,7 +140,8 @@ def tfrecord_input_fn(split_name,
   path_ = pathlib.Path(tfrecords_path)
   tfrecords_files = path_.glob(_FILE_PATTERN % split_name)
   print(tfrecords_files)
-  tfrecords_files = [os.path.join(tfrecords_path, filename) for filename in tfrecords_files]
+  tfrecords_files = [str(filename.resolve()) for filename in tfrecords_files]
+  print('2', tfrecords_files)
   dataset = tf.data.TFRecordDataset(tfrecords_files, num_parallel_reads=15)
 
   # Map the parser over dataset, and batch results by up to batch_size
