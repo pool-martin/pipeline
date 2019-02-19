@@ -124,10 +124,6 @@ def parser(serialized_example):
   fragment_id = features['image/meta/id'].decode("utf-8")
   return fragment_id, fragment, label, 
 
-# Keep list of filenames, so you can input directory of tfrecords easily
-training_filenames = ["data/train.tfrecords"]
-test_filenames = ["data/test.tfrecords"]
-
 # Define the input function for training
 def tfrecord_input_fn(split_name, 
                       image_size=tuple([FLAGS.image_shape,FLAGS.image_shape]),
@@ -135,7 +131,7 @@ def tfrecord_input_fn(split_name,
                       batch_size=64, 
                       num_epochs=None):
   # Import 2kporn data
-  file_pattern = os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', _FILE_PATTERN % split_name)
+  file_pattern = os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number, _FILE_PATTERN % split_name)
   dataset = tf.contrib.data.TFRecordDataset(file_pattern, num_parallel_reads=15)
 
   # Map the parser over dataset, and batch results by up to batch_size
@@ -568,7 +564,7 @@ def main(stop_event):
                                                     num_epochs=None),
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
-            SPLITS_TO_SIZES  = pickle.load(open(os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', 'splits_to_sizes.pkl'),  'rb'))
+            SPLITS_TO_SIZES  = pickle.load(open(os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number, 'splits_to_sizes.pkl'),  'rb'))
             save_extracted_features(FLAGS, split_name, SPLITS_TO_SIZES[split_name], pred_generator)
             print('Going out of {} set'.format(split_name))
 
