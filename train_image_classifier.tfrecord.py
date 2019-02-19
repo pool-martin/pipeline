@@ -13,7 +13,7 @@ import time
 
 import numpy as np
 
-from net import i3d, i3d_v4
+from nets import i3d, i3d_v4
 from nets import i3d_v4_slim, c3d
 from nets import nets_factory
 from utils.get_file_list import getListOfFiles
