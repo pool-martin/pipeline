@@ -135,7 +135,7 @@ def tfrecord_input_fn(split_name,
   dataset = tf.data.TFRecordDataset(file_pattern, num_parallel_reads=15)
 
   # Map the parser over dataset, and batch results by up to batch_size
-  dataset = dataset.map(parser, num_threads=8, output_buffer_size=batch_size)
+  dataset = dataset.map(parser, num_parallel_calls=8)
   dataset = dataset.batch(batch_size)
   if num_epochs is not None:
         dataset = dataset.repeat(num_epochs)
