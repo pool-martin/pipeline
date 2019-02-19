@@ -99,7 +99,7 @@ def parser(serialized_example):
       tf.image.decode_jpeg(features['image/encoded_17'], channels=3),
       tf.image.decode_jpeg(features['image/encoded_18'], channels=3),
       tf.image.decode_jpeg(features['image/encoded_19'], channels=3),
-      tf.image.decode_jpeg(features['image/encoded_20'], channels=3,
+      tf.image.decode_jpeg(features['image/encoded_20'], channels=3),
       tf.image.decode_jpeg(features['image/encoded_21'], channels=3),
       tf.image.decode_jpeg(features['image/encoded_22'], channels=3),
       tf.image.decode_jpeg(features['image/encoded_23'], channels=3),
