@@ -113,10 +113,10 @@ def parser(serialized_example):
   for image in fragment:
       image.set_shape([224, 224, 3] )
 
+  fragment = np.stack(fragment, axis=0)
   image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
   fragment = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
                                            normalize_per_image=FLAGS.normalize_per_image), fragment)
-  fragment = np.stack(fragment, axis=0)
 
   # Normalize the values of the image from the range [0, 255] to [-0.5, 0.5]
 #   image = tf.cast(image, tf.float32) / 255 - 0.5
