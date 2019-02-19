@@ -475,88 +475,88 @@ def main(stop_event):
     time_hist = TimeHistory()
     tf.train.get_or_create_global_step()
 
-    # Getting validation and training sets
-    network_training_set, network_training_set_count, network_validation_set, network_validation_set_count = helpers.get_splits(FLAGS)
-    training_set_length = len(network_training_set)
-    steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
-    training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
-    print('training set length: {}, epochs: {}, num_gpus: {}, batch_size: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
-            FLAGS.epochs, FLAGS.num_gpus, FLAGS.batch_size, steps_per_epoch, training_set_max_steps))
+    # # Getting validation and training sets
+    # network_training_set, network_training_set_count, network_validation_set, network_validation_set_count = helpers.get_splits(FLAGS)
+    # training_set_length = len(network_training_set)
+    # steps_per_epoch = int(training_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+    # training_set_max_steps = int(FLAGS.epochs * steps_per_epoch)
+    # print('training set length: {}, epochs: {}, num_gpus: {}, batch_size: {}, steps per epoch: {}, max steps: {}'.format(training_set_length,
+    #         FLAGS.epochs, FLAGS.num_gpus, FLAGS.batch_size, steps_per_epoch, training_set_max_steps))
 
-    validation_set_length = len(network_validation_set)
-    validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size)) # * max(1, FLAGS.num_gpus)))
-    print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+    # validation_set_length = len(network_validation_set)
+    # validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size)) # * max(1, FLAGS.num_gpus)))
+    # print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
-    dataset_loader = None
-    dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
+    # dataset_loader = None
+    # dataset_loader = VideoLoader(FLAGS.dataset_dir, frame_shape=FLAGS.image_shape, stop_event=stop_event)
 
-    if FLAGS.train and FLAGS.eval:
+    # if FLAGS.train and FLAGS.eval:
 
-        estimator = create_estimator(steps_per_epoch)
-        train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
-                                                    shuffle= not FLAGS.dataset_to_memory,
-                                                    batch_size=FLAGS.batch_size,
-                                                    num_epochs=FLAGS.epochs,
-                                                    prefetch_buffer_size=FLAGS.batch_size * 3,
-                                                    fragments_count=network_training_set_count,
-                                                    dataset_in_memory=FLAGS.dataset_to_memory),
-                                                max_steps= training_set_max_steps,
-                                                hooks=[time_hist])
+    #     estimator = create_estimator(steps_per_epoch)
+    #     train_spec = tf.estimator.TrainSpec(input_fn=lambda:input_fn(network_training_set,
+    #                                                 shuffle= not FLAGS.dataset_to_memory,
+    #                                                 batch_size=FLAGS.batch_size,
+    #                                                 num_epochs=FLAGS.epochs,
+    #                                                 prefetch_buffer_size=FLAGS.batch_size * 3,
+    #                                                 fragments_count=network_training_set_count,
+    #                                                 dataset_in_memory=FLAGS.dataset_to_memory),
+    #                                             max_steps= training_set_max_steps,
+    #                                             hooks=[time_hist])
 
-        eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
-                                                    shuffle=False,
-                                                    batch_size=FLAGS.batch_size,
-                                                    num_epochs=None,
-                                                    fragments_count=network_validation_set_count,
-                                                    dataset_in_memory=True),
-                                                steps=validation_set_max_steps,
-                                                start_delay_secs=FLAGS.eval_interval_secs,
-                                                throttle_secs=FLAGS.eval_interval_secs,
-                                                hooks=[time_hist])
+    #     eval_spec = tf.estimator.EvalSpec(input_fn=lambda:input_fn(network_validation_set,
+    #                                                 shuffle=False,
+    #                                                 batch_size=FLAGS.batch_size,
+    #                                                 num_epochs=None,
+    #                                                 fragments_count=network_validation_set_count,
+    #                                                 dataset_in_memory=True),
+    #                                             steps=validation_set_max_steps,
+    #                                             start_delay_secs=FLAGS.eval_interval_secs,
+    #                                             throttle_secs=FLAGS.eval_interval_secs,
+    #                                             hooks=[time_hist])
 
-        tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+    #     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-    if FLAGS.train and not FLAGS.eval:
+    # if FLAGS.train and not FLAGS.eval:
 
-        estimator = create_estimator(steps_per_epoch)
-        estimator.train(input_fn=lambda:input_fn(network_training_set,
-                                            shuffle= not FLAGS.dataset_to_memory,
-                                            batch_size=int(FLAGS.batch_size),
-                                            num_epochs=FLAGS.epochs,
-                                            prefetch_buffer_size=FLAGS.batch_size * 3,
-                                            fragments_count=network_training_set_count,
-                                            dataset_in_memory=FLAGS.dataset_to_memory),
-                                            max_steps=training_set_max_steps,
-                                            hooks=[time_hist])
+    #     estimator = create_estimator(steps_per_epoch)
+    #     estimator.train(input_fn=lambda:input_fn(network_training_set,
+    #                                         shuffle= not FLAGS.dataset_to_memory,
+    #                                         batch_size=int(FLAGS.batch_size),
+    #                                         num_epochs=FLAGS.epochs,
+    #                                         prefetch_buffer_size=FLAGS.batch_size * 3,
+    #                                         fragments_count=network_training_set_count,
+    #                                         dataset_in_memory=FLAGS.dataset_to_memory),
+    #                                         max_steps=training_set_max_steps,
+    #                                         hooks=[time_hist])
 
-    if not FLAGS.train and FLAGS.eval:
-        # network_training_set, network_validation_set = helpers.get_splits(FLAGS)
-        # validation_set_length = len(network_validation_set)
-        # validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
-        # print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
+    # if not FLAGS.train and FLAGS.eval:
+    #     # network_training_set, network_validation_set = helpers.get_splits(FLAGS)
+    #     # validation_set_length = len(network_validation_set)
+    #     # validation_set_max_steps = int(validation_set_length/(FLAGS.batch_size * max(1, FLAGS.num_gpus)))
+    #     # print('validation set length: {}, max steps {}'.format(len(network_validation_set), validation_set_max_steps))
 
-        estimator = create_estimator(validation_set_max_steps)
-        estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
-                                                    shuffle=False,
-                                                    batch_size=int(FLAGS.batch_size),
-                                                    num_epochs=None,
-                                                    fragments_count=network_validation_set_count,
-                                                    dataset_in_memory=True),
-                                                    steps=validation_set_max_steps,
-                                                    hooks=[time_hist])
+    #     estimator = create_estimator(validation_set_max_steps)
+    #     estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
+    #                                                 shuffle=False,
+    #                                                 batch_size=int(FLAGS.batch_size),
+    #                                                 num_epochs=None,
+    #                                                 fragments_count=network_validation_set_count,
+    #                                                 dataset_in_memory=True),
+    #                                                 steps=validation_set_max_steps,
+    #                                                 hooks=[time_hist])
 
-    if FLAGS.eval_all:
-        checkpoints = tf.train.get_checkpoint_state(helpers.assembly_model_dir(FLAGS)).all_model_checkpoint_paths
-        for checkpoint in checkpoints:
-            estimator = create_estimator(validation_set_max_steps, checkpoint)
-            estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
-                                            shuffle=False,
-                                            batch_size=int(FLAGS.batch_size),
-                                            num_epochs=None,
-                                            fragments_count=network_validation_set_count,
-                                            dataset_in_memory=True),
-                                            steps=validation_set_max_steps,
-                                            hooks=[time_hist])
+    # if FLAGS.eval_all:
+    #     checkpoints = tf.train.get_checkpoint_state(helpers.assembly_model_dir(FLAGS)).all_model_checkpoint_paths
+    #     for checkpoint in checkpoints:
+    #         estimator = create_estimator(validation_set_max_steps, checkpoint)
+    #         estimator.evaluate(input_fn=lambda:input_fn(network_validation_set,
+    #                                         shuffle=False,
+    #                                         batch_size=int(FLAGS.batch_size),
+    #                                         num_epochs=None,
+    #                                         fragments_count=network_validation_set_count,
+    #                                         dataset_in_memory=True),
+    #                                         steps=validation_set_max_steps,
+    #                                         hooks=[time_hist])
 
     if FLAGS.predict:
         for split_name in ['train', 'validation', 'test']:
