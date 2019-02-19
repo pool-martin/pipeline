@@ -135,8 +135,11 @@ def tfrecord_input_fn(split_name,
                       batch_size=64, 
                       num_epochs=None):
   # Import 2kporn data
-  file_pattern = os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number, _FILE_PATTERN % split_name)
-  dataset = tf.data.TFRecordDataset(file_pattern, num_parallel_reads=15)
+  tfrecords_path = os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number)
+  path_ = pathlib.Path(tfrecords_path)
+  tfrecords_files = path_.glob(_FILE_PATTERN % split_name)
+  tfrecords_files = [os.path.join(tfrecords_path, filename) for filename in tfrecords_files]
+  dataset = tf.data.TFRecordDataset(tfrecords_files, num_parallel_reads=15)
 
   # Map the parser over dataset, and batch results by up to batch_size
   dataset = dataset.map(parser, num_parallel_calls=8)
