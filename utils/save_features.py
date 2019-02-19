@@ -44,7 +44,7 @@ def save_extracted_features(FLAGS, set_name, len_set_to_extract, pred_generator)
             print(', '.join(record), file=outfile)
         else :
             #print('snippet_id {}\n, label{}\n, feats{}'.format(snippet_id, label, feats))
-            pickle.dump([snippet_id, label, feats, probabilities], outfile)
+            pickle.dump([snippet_id.decode("utf-8"), label, feats, probabilities], outfile)
         s += 1
         print('}', end='\n' if (s+1) % 40 == 0 else '', file=sys.stderr, flush=True)
     print('', file=sys.stderr)

@@ -569,7 +569,8 @@ def main(stop_event):
                                                     num_epochs=None),
                                                 predict_keys=['snippet_id', 'truth_label', 'features'],
                                                 hooks=[time_hist])
-            SPLITS_TO_SIZES  = pickle.load(open(os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number, 'splits_to_sizes.pkl'),  'rb'))
+            with open(os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number, 'splits_to_sizes.pkl'),  'rb') as f:
+                SPLITS_TO_SIZES  = pickle.load(f)
             save_extracted_features(FLAGS, split_name, SPLITS_TO_SIZES[split_name], pred_generator)
             print('Going out of {} set'.format(split_name))
 
