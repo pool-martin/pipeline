@@ -125,7 +125,7 @@ def parser(serialized_example):
   # Normalize the values of the image from the range [0, 255] to [-0.5, 0.5]
 #   image = tf.cast(image, tf.float32) / 255 - 0.5
   label = tf.cast(features['image/class/label'], tf.int32)
-  fragment_id = features['image/meta/id'].decode("utf-8")
+  fragment_id = features['image/meta/id']
   return fragment_id, fragment, label, 
 
 # Define the input function for training
