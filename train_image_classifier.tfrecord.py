@@ -114,11 +114,11 @@ def parser(serialized_example):
       image.set_shape([224, 224, 3] )
 
   image_preprocessing_fn = preprocessing_factory.get_preprocessing( 'preprocessing', is_training= not FLAGS.predict)
-#   fragment = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
-#                                            normalize_per_image=FLAGS.normalize_per_image), fragment)
-  fragment = map(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
+  fragment = tf.stack(fragment, axis=0)
+  fragment = tf.map_fn(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
                                            normalize_per_image=FLAGS.normalize_per_image), fragment)
-  fragment = np.stack(fragment, axis=0)
+#   fragment = map(lambda img: image_preprocessing_fn(img, FLAGS.image_shape, FLAGS.image_shape,
+#                                            normalize_per_image=FLAGS.normalize_per_image), fragment)
   print('fragment.shape', fragment.shape)
   fragment.set_shape([30, 224, 224, 3])
 
