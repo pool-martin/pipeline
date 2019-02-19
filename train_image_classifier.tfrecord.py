@@ -139,6 +139,7 @@ def tfrecord_input_fn(split_name,
   tfrecords_path = os.path.join(FLAGS.dataset_dir, 'tfrecords_3D', FLAGS.split_number)
   path_ = pathlib.Path(tfrecords_path)
   tfrecords_files = path_.glob(_FILE_PATTERN % split_name)
+  print(tfrecords_files)
   tfrecords_files = [os.path.join(tfrecords_path, filename) for filename in tfrecords_files]
   dataset = tf.data.TFRecordDataset(tfrecords_files, num_parallel_reads=15)
 
