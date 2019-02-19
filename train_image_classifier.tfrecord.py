@@ -9,6 +9,7 @@ import tensorflow.contrib.slim as slim
 import gc
 from threading import Event
 import time
+import pathlib
 #tf.enable_eager_execution()
 
 import numpy as np
