@@ -31,7 +31,7 @@ _FILE_PATTERN = 'porn2k_%s_*.tfrecord'
 
 # Global vars
 dataset_labels = ['NonPorn', 'Porn']
-dataset_labels = [0, 1] #We are extracting labels from filenames and there is is as '1' and '0'
+dataset_labels = ['0', '1'] #We are extracting labels from filenames and there is is as '1' and '0'
 training_set_length = 0
 
 dataset_loader = None
@@ -124,7 +124,7 @@ def parser(serialized_example):
 
   # Normalize the values of the image from the range [0, 255] to [-0.5, 0.5]
 #   image = tf.cast(image, tf.float32) / 255 - 0.5
-  label = tf.cast(features['image/class/label'], tf.int32)
+  label = tf.cast(features['image/class/label'], tf.string)
   fragment_id = features['image/meta/id']
   return fragment_id, fragment, label, 
 
@@ -148,8 +148,9 @@ def tfrecord_input_fn(split_name,
   snippet_id, snippet, label = iterator.get_next()
 
 #   return fragment_id, features, labels
+  str_label = tf.py_func(lambda val: str(val), [label], tf.string)
   table = tf.contrib.lookup.index_table_from_tensor(mapping=tf.constant(dataset_labels))
-  return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(label) }, table.lookup(label))
+  return ({'snippet_id': snippet_id, 'snippet': snippet, 'label': table.lookup(str_label) }, table.lookup(str_label))
 
 
 
