@@ -44,15 +44,16 @@ def read_pickled_data(filename) :
     labels = np.empty([num_samples], dtype=np.float)
     print("labels and features 0 created")
     features = np.empty([num_samples, feature_size], dtype=np.float)
-    probabilities = np.empty([num_samples], dtype=np.float)
+    # probabilities = np.empty([num_samples], dtype=np.float)
     for s in range(num_samples) :
         sample = pickle.load(source)
         ids.append(sample[0])
         labels[s] = sample[1]
         features[s] = sample[2]
-        probabilities[s] = sample[3]
+        # probabilities[s] = sample[3]
     source.close()
-    return ids, labels, features, probabilities
+    return ids, labels, features
+    # return ids, labels, features, probabilities
 
 class exp2var() :
     def __init__(self, loc=0.0, scale=1.0) :
