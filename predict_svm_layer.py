@@ -133,7 +133,7 @@ outfile = open(FLAGS.output_predictions, 'w') if FLAGS.output_predictions else s
 if FLAGS.pool_by_id=='none' :
   for i in range(len(image_ids)) :
 #    print(image_ids[i], predictions_m[i], predictions_k[i], confidence_scores_m[i], confidence_scores_k[i], sep=',', file=outfile)
-    print(image_ids[i].decode("utf-8"), labels[i], predictions_m[i], confidence_scores_m[i], sep=',', file=outfile)
+    print(image_ids[i], labels[i], predictions_m[i], confidence_scores_m[i], sep=',', file=outfile)
 else :
   previous_id = None
   def print_result() :
